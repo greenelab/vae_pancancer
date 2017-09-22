@@ -62,7 +62,8 @@ ov_df.head(2)
 
 encoded_file = os.path.join('data', "encoded_rnaseq_onehidden_warmup_batchnorm.tsv")
 encoded_df = pd.read_table(encoded_file, index_col=0)
-encoded_df.shape
+print(encoded_df.shape)
+encoded_df.head(2)
 
 
 # In[9]:
@@ -245,7 +246,7 @@ weights = []
 for l in decoder.layers:
     weights.append(l.get_weights())
     
-weight_layer = pd.DataFrame(weights[1][0], columns=rnaseq_df.columns)
+weight_layer = pd.DataFrame(weights[1][0], columns=rnaseq_df.columns, index=range(1, 101))
 weight_layer.head(2)
 
 
