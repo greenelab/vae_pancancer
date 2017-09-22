@@ -142,24 +142,35 @@ i_56_genes = weight_layer.loc[56, :].sort_values(ascending = False)
 # In[15]:
 
 # File names for output genes
-node87pos = os.path.join('results', 'hgsc_node87genes_pos.tsv')
-node87neg = os.path.join('results', 'hgsc_node87genes_neg.tsv')
-node77pos = os.path.join('results', 'hgsc_node77genes_pos.tsv')
-node77neg = os.path.join('results', 'hgsc_node77genes_neg.tsv')
-node56pos = os.path.join('results', 'hgsc_node56genes_pos.tsv')
-node56neg = os.path.join('results', 'hgsc_node56genes_neg.tsv')
+node87pos_file = os.path.join('results', 'hgsc_node87genes_pos.tsv')
+node87neg_file = os.path.join('results', 'hgsc_node87genes_neg.tsv')
+node77pos_file = os.path.join('results', 'hgsc_node77genes_pos.tsv')
+node77neg_file = os.path.join('results', 'hgsc_node77genes_neg.tsv')
+node56pos_file = os.path.join('results', 'hgsc_node56genes_pos.tsv')
+node56neg_file = os.path.join('results', 'hgsc_node56genes_neg.tsv')
 
 high_std = 2
+col_names = ['gene', 'weight']
 
 # Get high weight genes
-(i_87_genes[i_87_genes > i_87_genes.std() * high_std]).to_csv(node87pos)
-(i_87_genes[i_87_genes < -1 * (i_87_genes.std() * high_std)]).to_csv(node87neg, sep='\t')
+node87pos_df = (i_87_genes[i_87_genes > i_87_genes.std() * high_std])
+node87neg_df = (i_87_genes[i_87_genes < -1 * (i_87_genes.std() * high_std)])
 
-(i_77_genes[i_77_genes > i_77_genes.std() * high_std]).to_csv(node77pos)
-(i_77_genes[i_77_genes < -1 * (i_77_genes.std() * high_std)]).to_csv(node77neg, sep='\t')
+node77pos_df = (i_77_genes[i_77_genes > i_77_genes.std() * high_std])
+node77neg_df = (i_77_genes[i_77_genes < -1 * (i_77_genes.std() * high_std)])
 
-(i_56_genes[i_56_genes > i_56_genes.std() * high_std]).to_csv(node56pos)
-(i_56_genes[i_56_genes < -1 * (i_56_genes.std() * high_std)]).to_csv(node56neg, sep='\t')
+node56pos_df = (i_56_genes[i_56_genes > i_56_genes.std() * high_std])
+node56neg_df = (i_56_genes[i_56_genes < -1 * (i_56_genes.std() * high_std)])
+
+# Write to file
+node87pos_df.to_csv(node87pos_file, sep='\t')
+node87neg_df.to_csv(node87neg_file, sep='\t')
+
+node77pos_df.to_csv(node77pos_file, sep='\t')
+node77neg_df.to_csv(node77neg_file, sep='\t')
+
+node56pos_df.to_csv(node56pos_file, sep='\t')
+node56neg_df.to_csv(node56neg_file, sep='\t')
 
 
 # In[16]:
@@ -183,16 +194,24 @@ d_38_genes = weight_layer.loc[38, :].sort_values(ascending = False)
 # In[18]:
 
 # File names for output genes
-node79pos = os.path.join('results', 'hgsc_node79genes_diffpro_pos.tsv')
-node79neg = os.path.join('results', 'hgsc_node79genes_diffpro_neg.tsv')
-node38pos = os.path.join('results', 'hgsc_node38genes_diffpro_pos.tsv')
-node38neg = os.path.join('results', 'hgsc_node38genes_diffpro_neg.tsv')
+node79pos_file = os.path.join('results', 'hgsc_node79genes_diffpro_pos.tsv')
+node79neg_file = os.path.join('results', 'hgsc_node79genes_diffpro_neg.tsv')
+node38pos_file = os.path.join('results', 'hgsc_node38genes_diffpro_pos.tsv')
+node38neg_file = os.path.join('results', 'hgsc_node38genes_diffpro_neg.tsv')
 
-(d_79_genes[d_79_genes > d_79_genes.std() * high_std]).to_csv(node79pos)
-(d_79_genes[d_79_genes < -1 * (d_79_genes.std() * high_std)]).to_csv(node79neg, sep='\t')
+# Get high weight genes
+node79pos_df = (d_79_genes[d_79_genes > d_79_genes.std() * high_std])
+node79neg_df = (d_79_genes[d_79_genes < -1 * (d_79_genes.std() * high_std)])
 
-(d_38_genes[d_38_genes > d_38_genes.std() * high_std]).to_csv(node38pos)
-(d_38_genes[d_38_genes < -1 * (d_38_genes.std() * high_std)]).to_csv(node38neg, sep='\t')
+node38pos_df = (d_38_genes[d_38_genes > d_38_genes.std() * high_std])
+node38neg_df = (d_38_genes[d_38_genes < -1 * (d_38_genes.std() * high_std)])
+
+# Write to file
+node79pos_df.to_csv(node79pos_file, sep='\t')
+node79neg_df.to_csv(node79neg_file, sep='\t')
+
+node38pos_df.to_csv(node38pos_file, sep='\t')
+node38neg_df.to_csv(node38neg_file, sep='\t')
 
 
 # In[19]:
