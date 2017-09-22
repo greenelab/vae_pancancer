@@ -153,13 +153,13 @@ high_std = 2
 
 # Get high weight genes
 (i_87_genes[i_87_genes > i_87_genes.std() * high_std]).to_csv(node87pos)
-(i_87_genes[i_87_genes < -1 * (i_87_genes.std() * high_std)]).to_csv(node87neg)
+(i_87_genes[i_87_genes < -1 * (i_87_genes.std() * high_std)]).to_csv(node87neg, sep='\t')
 
 (i_77_genes[i_77_genes > i_77_genes.std() * high_std]).to_csv(node77pos)
-(i_77_genes[i_77_genes < -1 * (i_77_genes.std() * high_std)]).to_csv(node77neg)
+(i_77_genes[i_77_genes < -1 * (i_77_genes.std() * high_std)]).to_csv(node77neg, sep='\t')
 
 (i_56_genes[i_56_genes > i_56_genes.std() * high_std]).to_csv(node56pos)
-(i_56_genes[i_56_genes < -1 * (i_56_genes.std() * high_std)]).to_csv(node56neg)
+(i_56_genes[i_56_genes < -1 * (i_56_genes.std() * high_std)]).to_csv(node56neg, sep='\t')
 
 
 # In[16]:
@@ -189,10 +189,10 @@ node38pos = os.path.join('results', 'hgsc_node38genes_diffpro_pos.tsv')
 node38neg = os.path.join('results', 'hgsc_node38genes_diffpro_neg.tsv')
 
 (d_79_genes[d_79_genes > d_79_genes.std() * high_std]).to_csv(node79pos)
-(d_79_genes[d_79_genes < -1 * (d_79_genes.std() * high_std)]).to_csv(node79neg)
+(d_79_genes[d_79_genes < -1 * (d_79_genes.std() * high_std)]).to_csv(node79neg, sep='\t')
 
 (d_38_genes[d_38_genes > d_38_genes.std() * high_std]).to_csv(node38pos)
-(d_38_genes[d_38_genes < -1 * (d_38_genes.std() * high_std)]).to_csv(node38neg)
+(d_38_genes[d_38_genes < -1 * (d_38_genes.std() * high_std)]).to_csv(node38neg, sep='\t')
 
 
 # In[19]:
