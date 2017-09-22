@@ -150,7 +150,6 @@ node56pos_file = os.path.join('results', 'hgsc_node56genes_pos.tsv')
 node56neg_file = os.path.join('results', 'hgsc_node56genes_neg.tsv')
 
 high_std = 2
-col_names = ['gene', 'weight']
 
 # Get high weight genes
 node87pos_df = (i_87_genes[i_87_genes > i_87_genes.std() * high_std])
@@ -162,18 +161,39 @@ node77neg_df = (i_77_genes[i_77_genes < -1 * (i_77_genes.std() * high_std)])
 node56pos_df = (i_56_genes[i_56_genes > i_56_genes.std() * high_std])
 node56neg_df = (i_56_genes[i_56_genes < -1 * (i_56_genes.std() * high_std)])
 
-# Write to file
-node87pos_df.to_csv(node87pos_file, sep='\t')
-node87neg_df.to_csv(node87neg_file, sep='\t')
-
-node77pos_df.to_csv(node77pos_file, sep='\t')
-node77neg_df.to_csv(node77neg_file, sep='\t')
-
-node56pos_df.to_csv(node56pos_file, sep='\t')
-node56neg_df.to_csv(node56neg_file, sep='\t')
-
 
 # In[16]:
+
+# Process and write out tsv files
+col_names = ['genes', 'weight']
+
+node87pos_df = pd.DataFrame(node87pos_df).reset_index()
+node87pos_df.columns = col_names
+node87neg_df = pd.DataFrame(node87neg_df).reset_index()
+node87neg_df.columns = col_names
+
+node77pos_df = pd.DataFrame(node77pos_df).reset_index()
+node77pos_df.columns = col_names
+node77neg_df = pd.DataFrame(node77neg_df).reset_index()
+node77neg_df.columns = col_names
+
+node56pos_df = pd.DataFrame(node56pos_df).reset_index()
+node56pos_df.columns = col_names
+node56neg_df = pd.DataFrame(node56neg_df).reset_index()
+node56neg_df.columns = col_names
+
+# Write to file
+node87pos_df.to_csv(node87pos_file, index=False, sep='\t')
+node87neg_df.to_csv(node87neg_file, index=False, sep='\t')
+
+node77pos_df.to_csv(node77pos_file, index=False, sep='\t')
+node77neg_df.to_csv(node77neg_file, index=False, sep='\t')
+
+node56pos_df.to_csv(node56pos_file, index=False, sep='\t')
+node56neg_df.to_csv(node56neg_file, index=False, sep='\t')
+
+
+# In[17]:
 
 high_differ = (dif_mean_vector - pro_mean_vector).sort_values(ascending=False).head(2)
 high_prolif = (dif_mean_vector - pro_mean_vector).sort_values(ascending=False).tail(2)
@@ -184,14 +204,14 @@ print("Features with large differences: Proliferative high, Differentiated low")
 print(high_prolif)
 
 
-# In[17]:
+# In[18]:
 
 # Get the high weight genes describing the differentiated subtype
 d_79_genes = weight_layer.loc[79, :].sort_values(ascending = False)
 d_38_genes = weight_layer.loc[38, :].sort_values(ascending = False)
 
 
-# In[18]:
+# In[19]:
 
 # File names for output genes
 node79pos_file = os.path.join('results', 'hgsc_node79genes_diffpro_pos.tsv')
@@ -206,15 +226,28 @@ node79neg_df = (d_79_genes[d_79_genes < -1 * (d_79_genes.std() * high_std)])
 node38pos_df = (d_38_genes[d_38_genes > d_38_genes.std() * high_std])
 node38neg_df = (d_38_genes[d_38_genes < -1 * (d_38_genes.std() * high_std)])
 
-# Write to file
-node79pos_df.to_csv(node79pos_file, sep='\t')
-node79neg_df.to_csv(node79neg_file, sep='\t')
 
-node38pos_df.to_csv(node38pos_file, sep='\t')
-node38neg_df.to_csv(node38neg_file, sep='\t')
+# In[20]:
+
+# Process and write out tsv files
+node79pos_df = pd.DataFrame(node79pos_df).reset_index()
+node79pos_df.columns = col_names
+node79neg_df = pd.DataFrame(node79neg_df).reset_index()
+node79neg_df.columns = col_names
+
+node38pos_df = pd.DataFrame(node38pos_df).reset_index()
+node38pos_df.columns = col_names
+node38neg_df = pd.DataFrame(node38neg_df).reset_index()
+node38neg_df.columns = col_names
+
+node79pos_df.to_csv(node79pos_file, index=False, sep='\t')
+node79neg_df.to_csv(node79neg_file, index=False, sep='\t')
+
+node38pos_df.to_csv(node38pos_file, index=False, sep='\t')
+node38neg_df.to_csv(node38neg_file, index=False, sep='\t')
 
 
-# In[19]:
+# In[21]:
 
 # Node 87 has high mesenchymal, low immunoreactive
 node87_file = os.path.join('figures', 'node87_distribution_ovsubtype.pdf')
@@ -226,7 +259,7 @@ plt.tight_layout()
 plt.savefig(node87_file)
 
 
-# In[20]:
+# In[22]:
 
 # Node 77 has high immunoreactive, low mesenchymal
 node77_file = os.path.join('figures', 'node77_distribution_ovsubtype.pdf')
@@ -238,7 +271,7 @@ plt.tight_layout()
 plt.savefig(node77_file)
 
 
-# In[21]:
+# In[23]:
 
 # Node 56 has high immunoreactive, low mesenchymal (but also low proliferative)
 node56_file = os.path.join('figures', 'node56_distribution_ovsubtype.pdf')
@@ -250,7 +283,7 @@ plt.tight_layout()
 plt.savefig(node56_file)
 
 
-# In[22]:
+# In[24]:
 
 # Node 79 has high proliferative, low differentiated
 node79_file = os.path.join('figures', 'node79_distribution_ovsubtype.pdf')
@@ -262,7 +295,7 @@ plt.tight_layout()
 plt.savefig(node79_file)
 
 
-# In[23]:
+# In[25]:
 
 # Node 38 has high differentiated, low proliferative
 node38_file = os.path.join('figures', 'node38_distribution_ovsubtype.pdf')
