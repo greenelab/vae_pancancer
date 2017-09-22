@@ -1,7 +1,7 @@
 
 # coding: utf-8
 
-# # Interpolating high grade serous ovarian cancer subtypes in VAE space
+# # Tybalt latent space arithmetic with high grade serous ovarian cancer subtypes
 # 
 # Recent applications of generative models (GANs and VAEs) in image processing has demonstrated the remarkable ability of the latent dimensions to capture a meaningful manifold representation of the input space. Here, we assess if the VAE learns a latent space that can be mathematically manipulated to reveal insight into the gene expression activation patterns of high grade serous ovarian cancer (HGSC) subtypes.
 # 
