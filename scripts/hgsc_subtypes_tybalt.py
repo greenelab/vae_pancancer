@@ -15,8 +15,6 @@ import pandas as pd
 import matplotlib.pyplot as plt
 import seaborn as sns
 
-import keras
-
 
 # In[2]:
 
@@ -237,29 +235,29 @@ def get_high_weight(weight_matrix, node, high_std=2, direction='positive'):
 # Obtain the decoder weights
 weight_file = os.path.join('results', 'tybalt_gene_weights.tsv')
 
-weight_layer = pd.read_table(weight_file, index_col=0)
-weight_layer.head(2)
+weight_df = pd.read_table(weight_file, index_col=0)
+weight_df.head(2)
 
 
 # In[23]:
 
 # Output high weight genes for nodes representing mesenchymal vs immunoreactive
-node87pos_df = get_high_weight(weight_layer, node=87)
-node87neg_df = get_high_weight(weight_layer, node=87, direction='negative')
+node87pos_df = get_high_weight(weight_df, node=87)
+node87neg_df = get_high_weight(weight_df, node=87, direction='negative')
 
-node77pos_df = get_high_weight(weight_layer, node=77)
-node77neg_df = get_high_weight(weight_layer, node=77, direction='negative')
+node77pos_df = get_high_weight(weight_df, node=77)
+node77neg_df = get_high_weight(weight_df, node=77, direction='negative')
 
-node56pos_df = get_high_weight(weight_layer, node=56)
-node56neg_df = get_high_weight(weight_layer, node=56, direction='negative')
+node56pos_df = get_high_weight(weight_df, node=56)
+node56neg_df = get_high_weight(weight_df, node=56, direction='negative')
 
 
 # In[24]:
 
 # Output high weight genes for nodes representing proliferative vs differentiated
-node79pos_df = get_high_weight(weight_layer, node=79)
-node79neg_df = get_high_weight(weight_layer, node=79, direction='negative')
+node79pos_df = get_high_weight(weight_df, node=79)
+node79neg_df = get_high_weight(weight_df, node=79, direction='negative')
 
-node38pos_df = get_high_weight(weight_layer, node=38)
-node38neg_df = get_high_weight(weight_layer, node=38, direction='negative')
+node38pos_df = get_high_weight(weight_df, node=38)
+node38neg_df = get_high_weight(weight_df, node=38, direction='negative')
 
