@@ -10,6 +10,45 @@ library(readr)
 library(dplyr)
 library(ggplot2)
 
+plotTybaltActivation <- function(df, x, y, covariate, legend_show = TRUE) {
+  # Helper function to plot given coordinates and color by specific covariates
+  #
+  # Arguments:
+  # df - dataframe for plotting, must include x, y, and covariate variables
+  # x - encoding integer or string to be plotted on x axis
+  # y - encoding integer or string to be plotted on y axis
+  # covariate - which factors to distinguish by color in the plot
+  # legend_show - boolean to determine if the plot should include a legend
+  #
+  # Output:
+  # Will return the constructed ggplot object
+
+  x_coord <- paste(x)
+  y_coord <- paste(y)
+  color_ <- covariate
+
+  p <- ggplot(df, aes_string(x = combined_df[[x_coord]],
+                             y = combined_df[[y_coord]],
+                             color = color_)) + 
+    geom_point() +
+    xlab(paste("encoding", x_coord)) +
+    ylab(paste("encoding", y_coord)) +
+    theme_bw() +
+    theme(text = element_text(size = 20))
+
+  if (color_ == "acronym") {
+    p <- p + scale_colour_manual(limits = tcga_colors$`Study Abbreviation`,
+                                 values = tcga_colors$`Hex Colors`,
+                                 na.value = "black",
+                                 breaks = palette_order)
+  }
+
+  if (!legend_show) {
+    p <- p + theme(legend.position = "none")
+  }
+  return(p)
+}
+
 # 1) Scatter plots of encoding specific sample activation
 # Load the combined data frame where columns are different data and algorithms
 vae_clinical_file <- file.path("data", "tybalt_features_with_clinical.tsv")
@@ -28,48 +67,22 @@ palette_order <- c("BRCA", "PRAD", "TGCT", "KICH", "KIRP", "KIRC", "BLCA",
                    "CHOL", "PAAD", "LIHC", "DLBC", "MESO", "LUSC", "LUAD",
                    "GBM", "LGG", "LAML", "THYM", NA)
 
-plot_vae <- function(x, y, covariate, legend_show = TRUE) {
-  # Helper function to plot given coordinates and color by specific covariates
-  x_coord <- paste(x)
-  y_coord <- paste(y)
-  color_ <- covariate
-
-  p <- ggplot(combined_df,
-              aes_string(x = combined_df[[x_coord]],
-                         y = combined_df[[y_coord]],
-                         color = color_)) + 
-    geom_point() +
-    xlab(paste("encoding", x_coord)) +
-    ylab(paste("encoding", y_coord)) +
-    theme_bw() +
-    theme(text = element_text(size = 20))
-  
-  if (color_ == "acronym") {
-    p <- p + scale_colour_manual(limits = tcga_colors$`Study Abbreviation`,
-                                 values = tcga_colors$`Hex Colors`,
-                                 na.value = "black",
-                                 breaks = palette_order)
-  }
-
-  if (!legend_show) {
-    p <- p + theme(legend.position = "none")
-  }
-  print(p)
-}
-
 gender_encodings <- file.path("figures", "gender_encodings.pdf")
 gender_encodings_legend <- file.path("figures", "gender_encodings_legend.pdf")
 sample_type_file <- file.path("figures", "sample_type_encodings.pdf")
 sample_legend_file <- file.path("figures", "sample_type_encodings_legend.pdf")
 
 # Output plots with and without legend
-plot_vae(x = 82, y = 85, covariate = "gender", legend_show = FALSE)
-ggsave(gender_encodings, width = 6, height = 5)
+gender_fig <- plotTybaltActivation(combined_df, x = 82, y = 85,
+                                   covariate = "gender", legend_show = FALSE)
+ggsave(gender_encodings, plot = gender_fig, width = 6, height = 5)
 
-plot_vae(x = 82, y = 85, covariate = "gender", legend_show = TRUE)
-ggsave(gender_encodings_legend, width = 6, height = 5)
+gender_legend <- plotTybaltActivation(combined_df, x = 82, y = 85,
+                                      covariate = "gender", legend_show = TRUE)
+ggsave(gender_encodings_legend, plot = gender_legend, width = 6, height = 5)
 
-# Subset new dataframe for visualizing Melanoma activation
+# Subset new dataframe for visualizing Melanoma (SKCM) activation. We
+# previously observed the two encodings (53 and 66) separated SKCM tumors.
 met_df <- combined_df %>%
   dplyr::select("53", "66", "sample_type", "acronym") %>%
   dplyr::mutate(label = paste0(sample_type, acronym))
@@ -83,7 +96,7 @@ met_df$label[(met_df$acronym != "SKCM") &
                (met_df$sample_type == "Metastatic")] <- "Metastatic Other"
 met_df$label[(met_df$label == "MetastaticSKCM")] <- "Metastatic SKCM"
 
-p <- ggplot(met_df, aes(x = met_df$`53`, y = met_df$`66`, color = label)) + 
+p <- ggplot(met_df, aes(x = `53`, y = `66`, color = label)) + 
   geom_point() +
   xlab(paste("encoding 53")) +
   ylab(paste("encoding 66")) +
@@ -91,14 +104,15 @@ p <- ggplot(met_df, aes(x = met_df$`53`, y = met_df$`66`, color = label)) +
   theme(text = element_text(size = 20))
 
 # Save plots with and without legend
-p + theme(legend.position = "none")
-ggsave(sample_type_file, width = 6, height = 5)
+p_legend <- p + theme(legend.position = "none")
+ggsave(sample_type_file, plot = p_legend, width = 6, height = 5)
 
-p
-ggsave(sample_legend_file, width = 6, height = 5)
+ggsave(sample_legend_file, plot = p, width = 6, height = 5)
 
 # 2) Full heatmap of samples by tybalt feature activation
-mat <- as.matrix(combined_df[, 2:101])
+encodings_df <- combined_df %>% select(num_range('', 1:100))
+encodings_matrix <- as.matrix(encodings_df)
+
 sample_type_vector <- combined_df$sample_type
 sample_type_vector <- sample_type_vector %>%
   dplyr::recode("Primary Tumor" = "green",
@@ -108,17 +122,17 @@ sample_type_vector <- sample_type_vector %>%
                 "Additional Metastatic" = "red",
                 "Solid Tissue Normal" = "blue",
                 "Primary Blood Derived Cancer - Peripheral Blood" = "purple")
+
 sex_vector <- combined_df$gender
 sex_vector <- sex_vector %>%
-  dplyr::recode("female" = "orange",
-                "male" = "black")
+  dplyr::recode("female" = "orange", "male" = "black")
+
 row_color_matrix <- as.matrix(cbind(sample_type_vector, sex_vector))
 colnames(row_color_matrix) <- c("Sample", "Sex")
 
 heatmap_file <- file.path("figures", "encoding_heatmap.pdf")
-
 pdf(heatmap_file, width = 8, height = 9)
-heatmap.plus::heatmap.plus(mat, RowSideColors = row_color_matrix,
+heatmap.plus::heatmap.plus(encodings_matrix, RowSideColors = row_color_matrix,
                            scale = "row", labRow = FALSE, labCol = FALSE,
                            ylab = "Samples", xlab = "VAE Encodings")
 legend(x = -0.08, y = 1.08, xpd = TRUE,
