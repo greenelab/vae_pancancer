@@ -39,26 +39,19 @@ np.random.seed(123)
 
 # In[5]:
 
-# Load Models
-decoder_model_file = os.path.join('models', 'decoder_onehidden_vae.hdf5')
-decoder = keras.models.load_model(decoder_model_file)
-
-
-# In[6]:
-
 rnaseq_file = os.path.join('data', 'pancan_scaled_zeroone_rnaseq.tsv')
 rnaseq_df = pd.read_table(rnaseq_file, index_col=0)
 rnaseq_df.shape
 
 
-# In[7]:
+# In[6]:
 
 ov_file = os.path.join('data', 'ov_subtype_info.tsv')
 ov_df = pd.read_table(ov_file, index_col=0)
 ov_df.head(2)
 
 
-# In[8]:
+# In[7]:
 
 encoded_file = os.path.join('data', "encoded_rnaseq_onehidden_warmup_batchnorm.tsv")
 encoded_df = pd.read_table(encoded_file, index_col=0)
@@ -66,7 +59,7 @@ print(encoded_df.shape)
 encoded_df.head(2)
 
 
-# In[9]:
+# In[8]:
 
 # Subset and merge the HGSC subtype info with the latent space feature activations
 ov_samples = list(set(encoded_df.index) & (set(ov_df.index)))
@@ -86,7 +79,7 @@ print(ov_encoded_subtype.shape)
 ov_encoded_subtype.head(2)
 
 
-# In[10]:
+# In[9]:
 
 # Get the HGSC mean feature activation
 ov_mean_subtypes = ov_encoded_subtype.groupby('SUBTYPE').mean()
@@ -104,13 +97,13 @@ ov_mean_subtypes
 
 # ### 1) Immunoreactive - Mesenchmymal
 
-# In[11]:
+# In[10]:
 
 mes_mean_vector = ov_mean_subtypes.loc['Mesenchymal', [str(x) for x in range(1, 101)]]
 imm_mean_vector = ov_mean_subtypes.loc['Immunoreactive', [str(x) for x in range(1, 101)]]
 
 
-# In[12]:
+# In[11]:
 
 high_immuno = (imm_mean_vector - mes_mean_vector).sort_values(ascending=False).head(2)
 high_mesenc = (imm_mean_vector - mes_mean_vector).sort_values(ascending=False).tail(2)
@@ -121,13 +114,13 @@ print("Features with large differences: Mesenchymal high, Immuno low")
 print(high_mesenc)
 
 
-# In[13]:
+# In[12]:
 
 # Select to visualize encoding 56 because it has high immuno and low everything else
 ov_mean_subtypes.loc[:, ['87', '77', '56']]
 
 
-# In[14]:
+# In[13]:
 
 # Node 87 has high mesenchymal, low immunoreactive
 node87_file = os.path.join('figures', 'node87_distribution_ovsubtype.pdf')
@@ -139,7 +132,7 @@ plt.tight_layout()
 plt.savefig(node87_file)
 
 
-# In[15]:
+# In[14]:
 
 # Node 77 has high immunoreactive, low mesenchymal
 node77_file = os.path.join('figures', 'node77_distribution_ovsubtype.pdf')
@@ -151,7 +144,7 @@ plt.tight_layout()
 plt.savefig(node77_file)
 
 
-# In[16]:
+# In[15]:
 
 # Node 56 has high immunoreactive, low mesenchymal (and prolif/diff)
 node56_file = os.path.join('figures', 'node56_distribution_ovsubtype.pdf')
@@ -165,13 +158,13 @@ plt.savefig(node56_file)
 
 # ### 2) Differentiated - Proliferative
 
-# In[17]:
+# In[16]:
 
 pro_mean_vector = ov_mean_subtypes.loc['Proliferative', [str(x) for x in range(1, 101)]]
 dif_mean_vector = ov_mean_subtypes.loc['Differentiated', [str(x) for x in range(1, 101)]]
 
 
-# In[18]:
+# In[17]:
 
 high_differ = (dif_mean_vector - pro_mean_vector).sort_values(ascending=False).head(2)
 high_prolif = (dif_mean_vector - pro_mean_vector).sort_values(ascending=False).tail(2)
@@ -182,13 +175,13 @@ print("Features with large differences: Proliferative high, Differentiated low")
 print(high_prolif)
 
 
-# In[19]:
+# In[18]:
 
 # Select to visualize encoding 56 because it has high immuno and low everything else
 ov_mean_subtypes.loc[:, ['38', '79']]
 
 
-# In[20]:
+# In[19]:
 
 # Node 38 has high differentiated, low proliferative
 node38_file = os.path.join('figures', 'node38_distribution_ovsubtype.pdf')
@@ -200,7 +193,7 @@ plt.tight_layout()
 plt.savefig(node38_file)
 
 
-# In[21]:
+# In[20]:
 
 # Node 79 has high proliferative, low differentiated
 node79_file = os.path.join('figures', 'node79_distribution_ovsubtype.pdf')
@@ -214,7 +207,7 @@ plt.savefig(node79_file)
 
 # ### Explore weights that explain the nodes
 
-# In[22]:
+# In[21]:
 
 def get_high_weight(weight_matrix, node, high_std=2, direction='positive'):
     """
@@ -239,18 +232,16 @@ def get_high_weight(weight_matrix, node, high_std=2, direction='positive'):
     return node_df
 
 
-# In[23]:
+# In[22]:
 
 # Obtain the decoder weights
-weights = []
-for l in decoder.layers:
-    weights.append(l.get_weights())
-    
-weight_layer = pd.DataFrame(weights[1][0], columns=rnaseq_df.columns, index=range(1, 101))
+weight_file = os.path.join('results', 'tybalt_gene_weights.tsv')
+
+weight_layer = pd.read_table(weight_file, index_col=0)
 weight_layer.head(2)
 
 
-# In[24]:
+# In[23]:
 
 # Output high weight genes for nodes representing mesenchymal vs immunoreactive
 node87pos_df = get_high_weight(weight_layer, node=87)
@@ -263,7 +254,7 @@ node56pos_df = get_high_weight(weight_layer, node=56)
 node56neg_df = get_high_weight(weight_layer, node=56, direction='negative')
 
 
-# In[25]:
+# In[24]:
 
 # Output high weight genes for nodes representing proliferative vs differentiated
 node79pos_df = get_high_weight(weight_layer, node=79)
