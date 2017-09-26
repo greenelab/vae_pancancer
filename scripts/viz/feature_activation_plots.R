@@ -27,8 +27,7 @@ plotTybaltActivation <- function(df, x, y, covariate, legend_show = TRUE) {
   y_coord <- paste(y)
   color_ <- covariate
 
-  p <- ggplot(df, aes_string(x = combined_df[[x_coord]],
-                             y = combined_df[[y_coord]],
+  p <- ggplot(df, aes_string(x = df[[x_coord]], y = df[[y_coord]],
                              color = color_)) + 
     geom_point() +
     xlab(paste("encoding", x_coord)) +
@@ -110,7 +109,7 @@ ggsave(sample_type_file, plot = p_legend, width = 6, height = 5)
 ggsave(sample_legend_file, plot = p, width = 6, height = 5)
 
 # 2) Full heatmap of samples by tybalt feature activation
-encodings_df <- combined_df %>% select(num_range('', 1:100))
+encodings_df <- combined_df %>% dplyr::select(num_range('', 1:100))
 encodings_matrix <- as.matrix(encodings_df)
 
 sample_type_vector <- combined_df$sample_type
