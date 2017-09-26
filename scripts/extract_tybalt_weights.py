@@ -68,6 +68,7 @@ for layer in decoder.layers:
     weights.append(layer.get_weights())
     
 weight_layer_df = pd.DataFrame(weights[1][0], columns=rnaseq_df.columns, index=range(1, 101))
+weight_layer_df.index.name = 'encodings'
 weight_layer_df.head(2)
 
 
@@ -88,7 +89,6 @@ weight_layer_df.to_csv(weight_file, sep='\t')
 
 # We previously identified node 82 as robustly separating sex in the data set:
 # Visualize the distribution of gene weights here
-sex_node = weight_layer_df.loc[82, :]
 sex_node_plot = weight_layer_df.loc[[82, 85], :].T
 sex_node_plot.columns = ['encoding 82', 'encoding 85']
 
