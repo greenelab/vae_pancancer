@@ -16,7 +16,7 @@
 library(WebGestaltR)
 library(dplyr)
 
-run_webgestalt <- function(genes, output_name, out_dir, background_file) {
+RunWebGestalt <- function(genes, output_name, out_dir, background_file) {
   # Function to run a WebGestalt Pathway Analysis
   #
   # Arguments:
@@ -66,7 +66,7 @@ for (hgsc_file in hgsc_files) {
   hgsc_genes <- hgsc_node_df$genes
 
   # Perform pathway analysis with WebGestaltR
-  output <- run_webgestalt(hgsc_genes, base_name, hgsc_out_dir, bg_file)
+  g <- RunWebGestalt(hgsc_genes, base_name, hgsc_out_dir, bg_file)
 }
 
 # 2) SKCM Analysis
@@ -86,7 +86,7 @@ node_66_pos_df <- node66_df %>% dplyr::filter(direction == "positive")
 node_66_neg_df <- node66_df %>% dplyr::filter(direction == "negative")
 
 # Perform pathway analysis and save results to file
-g <- run_webgestalt(node_53_pos_df$genes, "node53_pos", skcm_out_dir, bg_file)
-g <- run_webgestalt(node_53_neg_df$genes, "node53_neg", skcm_out_dir, bg_file)
-g <- run_webgestalt(node_66_pos_df$genes, "node66_pos", skcm_out_dir, bg_file)
-g <- run_webgestalt(node_66_neg_df$genes, "node66_neg", skcm_out_dir, bg_file)
+g <- RunWebGestalt(node_53_pos_df$genes, "node53_pos", skcm_out_dir, bg_file)
+g <- RunWebGestalt(node_53_neg_df$genes, "node53_neg", skcm_out_dir, bg_file)
+g <- RunWebGestalt(node_66_pos_df$genes, "node66_pos", skcm_out_dir, bg_file)
+g <- RunWebGestalt(node_66_neg_df$genes, "node66_neg", skcm_out_dir, bg_file)
