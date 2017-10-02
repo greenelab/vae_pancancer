@@ -40,7 +40,7 @@ this parameter influencing training time or optimal loss.
 
 ### Two Hidden Layers
 
-![param sweep two](figures/twohidden/full_param_final_param_val_loss.png?raw=true)
+![param sweep two](figures/param_sweep/twohidden/full_param_final_param_val_loss.png?raw=true)
 
 Based on optimal validation loss, the two hidden layer model has optimal
 hyperparameters at `learning_rate` = 0.001, `batch size` = 100, and `epochs` = 100.
@@ -54,5 +54,5 @@ penalized model performance, with `kappa` < 1 having consistently worse performa
 Two hidden layers does not improve performance as much as initially thought. Observed
 below are the two optimal models described above.
 
-![compare](figures/best_model_comparisons.png?raw=true)
+![compare](figures/param_sweep/best_model_comparisons.png?raw=true)
 
