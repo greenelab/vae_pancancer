@@ -144,6 +144,12 @@ mut_pivot.to_csv(mut_out_file, sep='\t')
 # In[9]:
 
 # Process per sample mutation burden
+
+# Mutation burden quantifies how many mutations are observed in a single tumor.
+# It is a measure of how unstable a tumors' genome is, potentially reflecting
+# deficiences in DNA repair and/or specific etiology. It is a major source of
+# variation in expression data and is used by alternative downstream models or
+# to explore relationships in tybalt features.
 burden_df = mutation_df[mutation_df['effect'].isin(mutations)]
 burden_df = burden_df.groupby('#sample').apply(len)
 burden_df = np.log10(burden_df).reset_index()
