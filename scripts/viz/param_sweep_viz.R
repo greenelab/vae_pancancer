@@ -78,7 +78,7 @@ recodeParameters <- function(filename, depth = 1) {
     dplyr::group_by(learning_rate, batch_size, epochs, kappa, depth) %>%
     dplyr::summarize(end_loss = tail(loss, 1))
   
-  return_list <- list(param_melt_df, final_select_df)
+  return_list <- list(param_melt_df, as.data.frame(final_select_df))
   return(return_list)
 } 
 
@@ -94,7 +94,6 @@ plotSweep <- function(df, param, base_file) {
   # Several plots stratifying validation loss across parameter combinations
 
   for (v in unique(df[, param])) {
-    print(v)
     subset_param <- df %>%
       dplyr::filter_(paste(param, "==", paste0('"', v, '"')))
     
@@ -181,15 +180,28 @@ plotSweep(tybalt_twohidden_df[[1]], "epochs", out_two_fig)
 plotFinalParams(tybalt_df[[2]], out_fig)
 plotFinalParams(tybalt_twohidden_df[[2]], twohidden = TRUE, out_two_fig)
 
-# Compare two hidden with one hidden layer
+# Identify the best models and compare two hidden with one hidden layer
+# We are restricting kappa = 1.0
+best_one_layer <- tybalt_df[[2]] %>%
+  dplyr::filter(kappa == "kappa: 1.0") %>%
+  dplyr::top_n(1, -end_loss)
+
+best_two_layer <- tybalt_twohidden_df[[2]] %>%
+  dplyr::filter(kappa == "kappa: 1.0") %>%
+  dplyr::top_n(1, -end_loss)
+
+# Subset best model training
 best_one_layer <- tybalt_df[[1]] %>%
-  dplyr::filter(epochs == "epochs: 100", batch_size == "batch: 50",
-                learning_rate == "0.0005", kappa == "kappa: 1.0")
+  dplyr::filter(epochs == best_one_layer$epochs,
+                batch_size ==  best_one_layer$batch_size,
+                learning_rate ==  best_one_layer$learning_rate,
+                kappa == best_one_layer$kappa)
 
 best_two_layer <- tybalt_twohidden_df[[1]] %>%
-  dplyr::filter(epochs == "epochs: 100", batch_size == "batch: 100",
-                learning_rate == "0.001", kappa == "kappa: 1.0")
-
+  dplyr::filter(epochs == best_two_layer$epochs,
+                batch_size == best_two_layer$batch_size,
+                learning_rate == best_two_layer$learning_rate,
+                kappa == best_two_layer$kappa)
 
 combined_param_df <- dplyr::bind_rows(best_one_layer, best_two_layer)
 
