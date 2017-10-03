@@ -63,11 +63,15 @@ depth = int(args.depth)
 first_layer = int(args.first_layer)
 output_filename = args.output_filename
 
-original_dim = 5000
+# Load Data
+rnaseq_file = os.path.join('data', 'pancan_scaled_zeroone_rnaseq.tsv')
+rnaseq_df = pd.read_table(rnaseq_file, index_col=0)
+
+# Set architecture dimensions
+original_dim = rnaseq_df.shape[1]
 latent_dim = 100
 epsilon_std = 1.0
 beta = K.variable(0)
-
 if depth == 2:
     latent_dim2 = int(first_layer)
 
@@ -129,8 +133,7 @@ class WarmUpCallback(Callback):
         if K.get_value(self.beta) <= 1:
             K.set_value(self.beta, K.get_value(self.beta) + self.kappa)
 
-rnaseq_file = os.path.join('data', 'pancan_scaled_zeroone_rnaseq.tsv')
-rnaseq_df = pd.read_table(rnaseq_file, index_col=0)
+# Process data
 
 # Split 10% test set randomly
 test_set_percent = 0.1
@@ -140,15 +143,16 @@ rnaseq_train_df = rnaseq_df.drop(rnaseq_test_df.index)
 # Input place holder for RNAseq data with specific input size
 rnaseq_input = Input(shape=(original_dim, ))
 
-
 # ~~~~~~~~~~~~~~~~~~~~~~
 # ENCODER
 # ~~~~~~~~~~~~~~~~~~~~~~
-# Input layer is compressed into a mean and log variance vector of size
-# `latent_dim`. Each layer is initialized with glorot uniform weights and each
-# step (dense connections, batch norm,and relu activation) are funneled
-# separately
+# Depending on the depth of the model, the input is eventually compressed into
+# a mean and log variance vector of prespecified size. Each layer is
+# initialized with glorot uniform weights and each step (dense connections,
+# batch norm,and relu activation) are funneled separately
+#
 # Each vector of length `latent_dim` are connected to the rnaseq input tensor
+# In the case of a depth 2 architecture, input_dim -> latent_dim -> latent_dim2
 
 if depth == 1:
     z_shape = latent_dim
@@ -179,17 +183,23 @@ z = Lambda(sampling,
 # ~~~~~~~~~~~~~~~~~~~~~~
 # DECODER
 # ~~~~~~~~~~~~~~~~~~~~~~
-# The decoding layer is much simpler with a single layer glorot uniform
-# initialized and sigmoid activation
+# The layers are different depending on the prespecified depth.
+#
+# Single layer: glorot uniform initialized and sigmoid activation.
+# Double layer: relu activated hidden layer followed by sigmoid reconstruction
 if depth == 1:
     decoder_to_reconstruct = Dense(original_dim,
                                    kernel_initializer='glorot_uniform',
                                    activation='sigmoid')
 elif depth == 2:
     decoder_to_reconstruct = Sequential()
-    decoder_to_reconstruct.add(Dense(latent_dim, activation='relu',
+    decoder_to_reconstruct.add(Dense(latent_dim,
+                                     kernel_initializer='glorot_uniform',
+                                     activation='relu',
                                      input_dim=latent_dim2))
-    decoder_to_reconstruct.add(Dense(original_dim, activation='sigmoid'))
+    decoder_to_reconstruct.add(Dense(original_dim,
+                                     kernel_initializer='glorot_uniform',
+                                     activation='sigmoid'))
 
 rnaseq_reconstruct = decoder_to_reconstruct(z)
 
