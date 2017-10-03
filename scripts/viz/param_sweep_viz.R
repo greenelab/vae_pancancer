@@ -193,8 +193,8 @@ best_two_layer <- tybalt_twohidden_df[[2]] %>%
 # Subset best model training
 best_one_layer <- tybalt_df[[1]] %>%
   dplyr::filter(epochs == best_one_layer$epochs,
-                batch_size ==  best_one_layer$batch_size,
-                learning_rate ==  best_one_layer$learning_rate,
+                batch_size == best_one_layer$batch_size,
+                learning_rate == best_one_layer$learning_rate,
                 kappa == best_one_layer$kappa)
 
 best_two_layer <- tybalt_twohidden_df[[1]] %>%
