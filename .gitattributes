@@ -13,3 +13,4 @@ data/encoded_adage_features.tsv filter=lfs diff=lfs merge=lfs -text
 data/adage_gene_weights.tsv filter=lfs diff=lfs merge=lfs -text
 results/tybalt_gene_weights.tsv filter=lfs diff=lfs merge=lfs -text
 results/parameter_sweep_twohidden_full_results.tsv filter=lfs diff=lfs merge=lfs -text
+data/pancan_mutation.tsv filter=lfs diff=lfs merge=lfs -text
