@@ -221,7 +221,7 @@ long_latent_space_df = long_latent_space_df.replace({'algorithm_color': algorith
 long_latent_space_df.head()
 
 
-# In[20]:
+# In[15]:
 
 latent_space_figure = os.path.join('figures', 'algorithm_comparison_latent_space.png')
 ax = sns.pointplot(x='rank', y='activation', hue='algorithm', data=long_latent_space_df,
@@ -231,8 +231,8 @@ ax.set_xlabel('Feature Rank')
 ax.set_ylabel('Mesenchymal - Immunoreactive\nFeature Activation')
 ax.set(xticklabels=[]);
 plt.tight_layout()
-plt.setp(ax.get_legend().get_texts(), fontsize= '12')
-plt.setp(ax.get_legend().get_title(), fontsize= '20')
+plt.setp(ax.get_legend().get_texts(), fontsize='12')
+plt.setp(ax.get_legend().get_title(), fontsize='16')
 plt.savefig(latent_space_figure, dpi=600, height=6, width=5)
 
 
