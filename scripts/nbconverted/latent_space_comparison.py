@@ -219,7 +219,7 @@ algorithm_color_dict = {'pca': '#a6cee3',
                         'vae_300': '#fdbf6f'}
 
 long_latent_space_df = long_latent_space_df.replace({'algorithm_color': algorithm_color_dict})
-long_latent_space_df.to_csv(latent_output_file, sep='\t')
+long_latent_space_df.to_csv(latent_output_file, index=False, sep='\t')
 print(long_latent_space_df.shape)
 long_latent_space_df.head()
 
