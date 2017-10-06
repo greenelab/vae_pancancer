@@ -110,7 +110,7 @@ def ov_subtraction(ov_mean_df, subtype_tuple, algorithm):
     ov_mean_df - DataFrame indicating the mean vector representation of ovarian cancer subtypes
     subtype_tuple - a tuple storing two strings indicating the subtraction to perform
                     select two: 'Mesenchymal', 'Proliferative', 'Immunoreactive', or 'Differentated'
-    algorithm - a string indicating the algorithm used. Will form the c
+    algorithm - a string indicating the algorithm used. Will form the column names in the output
                     
     Output:
     A ranking of encoded feature differences
@@ -200,6 +200,7 @@ latent_space_df.head(2)
 
 # In[13]:
 
+latent_output_file = os.path.join('results', 'hgsc_mesenchymal_immunoreactive_algorithm_subtract.tsv')
 long_latent_space_df = latent_space_df.stack().reset_index()
 long_latent_space_df.columns = ['rank', 'algorithm', 'activation']
 long_latent_space_df = long_latent_space_df[long_latent_space_df['algorithm'].isin(algorithms)]
@@ -218,6 +219,8 @@ algorithm_color_dict = {'pca': '#a6cee3',
                         'vae_300': '#fdbf6f'}
 
 long_latent_space_df = long_latent_space_df.replace({'algorithm_color': algorithm_color_dict})
+long_latent_space_df.to_csv(latent_output_file, sep='\t')
+print(long_latent_space_df.shape)
 long_latent_space_df.head()
 
 
@@ -240,19 +243,27 @@ plt.savefig(latent_space_figure, dpi=600, height=6, width=5)
 
 # In[16]:
 
-def get_high_weight_genes(weight_matrix, node, high_std=2.5, direction='positive',
+def get_high_weight_genes(weight_matrix, node, algorithm, high_std=2.5, direction='positive',
                           output_file=False):
     """
     Determine high weight genes given a gene weight matrix and feature
-    Output tab separated file
+    
+    Arguments:
+    weight_matrix - pandas DataFrame storing gene weights for each feature
+    node - An integer representing the index of the feature of interest
+    algorithm - A string that will be included as a column in the output DataFrame
+    high_std - The cutoff to determine a high weight gene
+    direction - A string deciding which tail to consider high weight genes from
+    output_file - A boolean indicating if the function should output a file
+    
+    Output:
+    A tuple consisting of two DataFrames: (high weight genes, all node genes)
     """
     genes = weight_matrix.loc[int(node), :].sort_values(ascending=False)
     if direction == 'positive':
         node_df = (genes[genes > genes.std() * high_std])
-        abbrev = 'pos'
     elif direction == 'negative':
         node_df = (genes[genes < -1 * (genes.std() * high_std)])
-        abbrev = 'neg'
 
     node_df = pd.DataFrame(node_df).reset_index()
     node_df.columns = ['genes', 'weight']
@@ -260,7 +271,12 @@ def get_high_weight_genes(weight_matrix, node, high_std=2.5, direction='positive
     if output_file:
         node_df.to_csv(output_file, index=False, sep='\t')
     
-    return node_df
+    # Process return data
+    genes_df = pd.DataFrame(genes).reset_index()
+    genes_df.columns = ['gene', 'activation']
+    genes_df = genes_df.assign(algorithm=algorithm)
+    
+    return (node_df, genes_df)
 
 
 # In[17]:
@@ -311,12 +327,36 @@ tybalt_node = latent_space_df.loc[0, 'tybalt_features']
 vae_100_node = latent_space_df.loc[0, 'vae_100_features']
 vae_300_node = latent_space_df.loc[0, 'vae_300_features']
 
-# Output the high weight genes
-pca_genes = get_high_weight_genes(pca_feature_df, pca_node, output_file=pca_out_genes)
-ica_genes = get_high_weight_genes(ica_feature_df, ica_node, output_file=ica_out_genes)
-nmf_genes = get_high_weight_genes(nmf_feature_df, nmf_node, output_file=nmf_out_genes)
-adage_genes = get_high_weight_genes(adage_feature_df, adage_node, output_file=adage_out_genes)
-tybalt_genes = get_high_weight_genes(tybalt_feature_df, tybalt_node, output_file=tybalt_out_genes)
-vae_100_genes = get_high_weight_genes(vae_tl_feature_df, vae_100_node, output_file=vae_100_out_genes)
-vae_300_genes = get_high_weight_genes(vae_tl300_feature_df, vae_300_node, output_file=vae_300_out_genes)
+# For this analysis, only output the positive high weight genes
+pca_genes = get_high_weight_genes(pca_feature_df, pca_node, algorithm='PCA',
+                                  output_file=pca_out_genes)
+ica_genes = get_high_weight_genes(ica_feature_df, ica_node, algorithm='ICA',
+                                  output_file=ica_out_genes)
+nmf_genes = get_high_weight_genes(nmf_feature_df, nmf_node, algorithm='NMF',
+                                  output_file=nmf_out_genes)
+adage_genes = get_high_weight_genes(adage_feature_df, adage_node, algorithm='ADAGE',
+                                    output_file=adage_out_genes)
+tybalt_genes = get_high_weight_genes(tybalt_feature_df, tybalt_node, algorithm='Tybalt',
+                                     output_file=tybalt_out_genes)
+vae_100_genes = get_high_weight_genes(vae_tl_feature_df, vae_100_node, algorithm='VAE_100',
+                                      output_file=vae_100_out_genes)
+vae_300_genes = get_high_weight_genes(vae_tl300_feature_df, vae_300_node, algorithm='VAE_300',
+                                      output_file=vae_300_out_genes)
+
+
+# In[20]:
+
+feature_activation_df = pd.concat([pca_genes[1], ica_genes[1],
+                                   nmf_genes[1], adage_genes[1],
+                                   tybalt_genes[1], vae_100_genes[1],
+                                   vae_300_genes[1]], axis=0)
+print(feature_activation_df.shape)
+feature_activation_df.head(5)
+
+
+# In[21]:
+
+# Visualize distribution of features to assess normality
+g = sns.FacetGrid(feature_activation_df, col='algorithm', sharex=False, sharey=False, hue='algorithm')
+g.map(sns.distplot, 'activation');
 
