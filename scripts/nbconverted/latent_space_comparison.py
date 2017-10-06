@@ -200,15 +200,30 @@ latent_space_df.head(2)
 
 # In[13]:
 
-latent_output_file = os.path.join('results', 'hgsc_mesenchymal_immunoreactive_algorithm_subtract.tsv')
-long_latent_space_df = latent_space_df.stack().reset_index()
-long_latent_space_df.columns = ['rank', 'algorithm', 'activation']
-long_latent_space_df = long_latent_space_df[long_latent_space_df['algorithm'].isin(algorithms)]
-long_latent_space_df = long_latent_space_df.assign(algorithm_color =
-                                                  long_latent_space_df['algorithm'])
+# Process latent space dataframe to long format
+long_latent_df = latent_space_df.stack().reset_index()
+long_latent_df.columns = ['rank', 'algorithm', 'feature_activity']
+
+# Distinguish node activation by feature
+long_algorithms_df = long_latent_df[long_latent_df['algorithm'].isin(algorithms)]
+long_algorithms_df.reset_index(drop=True, inplace=True)
+
+long_features_df = long_latent_df[~long_latent_df['algorithm'].isin(algorithms)]
+long_features_df.reset_index(drop=True, inplace=True)
+
+# Concatenate node assignments to the dataframe
+long_latent_space_df = pd.concat([long_algorithms_df, long_features_df],
+                                 ignore_index=True, axis=1)
+long_latent_space_df.columns = ['rank', 'algorithm', 'activation', 'feature_rank',
+                                'feature_name', 'feature']
+long_latent_space_df.head(2)
 
 
 # In[14]:
+
+# Assign color to each algorithm
+long_latent_space_df = long_latent_space_df.assign(algorithm_color =
+                                                   long_latent_space_df['algorithm'])
 
 algorithm_color_dict = {'pca': '#a6cee3',
                         'ica': '#1f78b4',
@@ -219,12 +234,23 @@ algorithm_color_dict = {'pca': '#a6cee3',
                         'vae_300': '#fdbf6f'}
 
 long_latent_space_df = long_latent_space_df.replace({'algorithm_color': algorithm_color_dict})
+
+# Drop redundant columns
+long_latent_space_df = long_latent_space_df.drop(['feature_rank', 'feature_name'], axis=1)
+long_latent_space_df.head(2)
+
+
+# In[15]:
+
+# Output ranking and activation scores per feature per algorithm
+latent_output_file = os.path.join('results',
+                                  'hgsc_mesenchymal_immunoreactive_algorithm_subtract.tsv')
 long_latent_space_df.to_csv(latent_output_file, index=False, sep='\t')
 print(long_latent_space_df.shape)
 long_latent_space_df.head()
 
 
-# In[15]:
+# In[16]:
 
 latent_space_figure = os.path.join('figures', 'algorithm_comparison_latent_space.png')
 ax = sns.pointplot(x='rank', y='activation', hue='algorithm', data=long_latent_space_df,
@@ -241,7 +267,7 @@ plt.savefig(latent_space_figure, dpi=600, height=6, width=5)
 
 # ### Part II. Extract high weight genes from each most explanatory feature
 
-# In[16]:
+# In[17]:
 
 def get_high_weight_genes(weight_matrix, node, algorithm, high_std=2.5, direction='positive',
                           output_file=False):
@@ -279,7 +305,7 @@ def get_high_weight_genes(weight_matrix, node, algorithm, high_std=2.5, directio
     return (node_df, genes_df)
 
 
-# In[17]:
+# In[18]:
 
 # Load feature matrices
 pca_feature_file = '../pancan_viz/data/pca_feature_rnaseq.tsv.gz'
@@ -300,13 +326,13 @@ vae_tl_feature_df = pd.read_table(vae_feature_twolayer_file, index_col=0)
 vae_tl300_feature_df = pd.read_table(vae_feature_twolayer300_file, index_col=0)
 
 
-# In[18]:
+# In[19]:
 
 # This is the largest difference in the Mesenchymal subtype across various algorithms
 latent_space_df.head(1)
 
 
-# In[19]:
+# In[20]:
 
 # Define output files
 base_dir = os.path.join('results', 'feature_comparison')
@@ -344,7 +370,7 @@ vae_300_genes = get_high_weight_genes(vae_tl300_feature_df, vae_300_node, algori
                                       output_file=vae_300_out_genes)
 
 
-# In[20]:
+# In[21]:
 
 feature_activation_df = pd.concat([pca_genes[1], ica_genes[1],
                                    nmf_genes[1], adage_genes[1],
@@ -354,7 +380,7 @@ print(feature_activation_df.shape)
 feature_activation_df.head(5)
 
 
-# In[21]:
+# In[22]:
 
 # Visualize distribution of features to assess normality
 g = sns.FacetGrid(feature_activation_df, col='algorithm', sharex=False, sharey=False, hue='algorithm')
