@@ -270,7 +270,7 @@ plt.savefig(latent_space_figure, dpi=600, height=6, width=5)
 # In[17]:
 
 def get_high_weight_genes(weight_matrix, node, algorithm, high_std=2.5, direction='positive',
-                          output_file=False):
+                          output_file=''):
     """
     Determine high weight genes given a gene weight matrix and feature
     
@@ -280,7 +280,7 @@ def get_high_weight_genes(weight_matrix, node, algorithm, high_std=2.5, directio
     algorithm - A string that will be included as a column in the output DataFrame
     high_std - The cutoff to determine a high weight gene
     direction - A string deciding which tail to consider high weight genes from
-    output_file - A boolean indicating if the function should output a file
+    output_file - A string representing a file path to save output. Will not save if empty
     
     Output:
     A tuple consisting of two DataFrames: (high weight genes, all node genes)
