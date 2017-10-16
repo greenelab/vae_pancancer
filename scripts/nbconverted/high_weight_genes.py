@@ -113,10 +113,12 @@ vae_2l300_weights = high_weight_genes(vae_2l300_file, metric=metric, thresh=thre
 
 # ## Visualize distributions
 # 
-# Certain `high_weight_genes` methods enable quick visualizations of high weigh gene features
+# Certain `high_weight_genes` methods enable quick visualizations of high weigh gene features. Here, we show:
 # 
 # 1. Positive and negative tail number of high weight genes
 # 2. Full gene activity distributions
+# 
+# We use the `standard method` of extracting high weight genes as presented in [Tan et al. 2017](https://doi.org/10.1016/j.cels.2017.06.003). Briefly, this method calculates the standard deviation of the gene weight distribution and then selects high weight genes based on a cutoff: `abs(weight) > 2.5 stddev`
 # 
 # ### Positive/negative tails
 
@@ -217,6 +219,8 @@ vae_2l300_weights.plot_weight_dist(features=first_encodings,
 # 
 # * Skewness - measure of distribution symmetry (normal distribution = 0)
 # * Kurtosis - measure of tail density (light tail is < 0, heavy tail is > 0)
+# 
+# We also remove outliers in this visualization to focus on the areas of highest densities. The outliers are defined based on calculating z-scores for `skew` and `kurtosis` and discarding the feature if it is `> 3z` for either. We output the nodes of interest with their corresponding values. The distributions of the samples over these features can be explored in our [Shiny App](https://gregway.shinyapps.io/pancan_plotter/). 
 
 # In[21]:
 
@@ -277,7 +281,7 @@ print(vae_2l300_outlier)
 # 
 # We also define subsets of Type C and Type D nodes because the skew could be positive (left tail) or negative (right tail).
 # 
-# High Skewness and Kurtosis determined statistically significantly different than normal using `scipy.stats.skewtest` and `scipy.stats.kurtosistest` with a Bonferonni adjusted p value.
+# High Skewness and Kurtosis determined statistically significantly different than normal using `scipy.stats.skewtest` and `scipy.stats.kurtosistest` with a Bonferroni adjusted p value.
 # 
 # ### Visualize the distribution of each of these node types across agorithms.
 
@@ -302,6 +306,25 @@ g = sns.barplot('node_type', y="count", hue='algorithm', palette=algorithm_color
 
 
 # ### Adjust for node type distributions and reassign high weights
+# 
+# The adjustments are made based on `skewness` and `kurtosis` observations for each node. Specially, each node is assigned a `type` and the high weight gene cutoff is modified based on the node type.
+# 
+# - **`Type A`** nodes have low `skew` and `kurtosis`.
+#   - This means gene features are symmetrical and include few genes in tails.
+#   - Increase the threshold by `0.5` to remove false positive genes from selection.
+# - **`Type B`** nodes have low `skew` and high `kurtosis`.
+#   - This means gene features are symmetrical and include many genes in tails.
+#   - This is the standard distribution designed for the given input threshold.
+# - **`Type C`** nodes have high `skew` and low `kurtosis`.
+#   - This means gene features are not symmetrical and include few genes in tails.
+#   - A single standard deviation cutoff is inappropriate to capture genes in both the positive and negative tails.
+#   - If the distribution is right skewed (more genes in the left tail), use the standard approach to identify left tailed genes, but increase the threshold by `0.5` to remove false positive genes from right tails.
+#   - If the distribution is left skewed (more genes in the right tail), use the standard approach to identify right tailed genes, but increase the threshold by `0.5` to remove false positive genes from the left tails.
+# - **`Type D`** nodes have high `skew` and high `kurtosis`.
+#   - This means gene features are not symmetrical and include many genes in tails.
+#   - A single standard deviation cutoff is inappropriate to capture genes in both the positive and negative tails.
+#   - If the distribution is right skewed (more genes in the left tail), decrease the threshold by `0.5` to identify left tailed genes, and use the standard threshold to identify genes from the right tails.
+#   - If the distribution is left skewed (more genes in the right tail), decrease the threshold by `0.5` to identify right tailed genes, and use the standard threshold to identify genes from the left tails.
 
 # In[30]:
 
