@@ -1,5 +1,5 @@
 """
-tybalt.py
+tybalt/models.py
 2017 Gregory Way
 
 Functions enabling the construction and usage of a Tybalt model
