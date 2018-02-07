@@ -201,7 +201,8 @@ class Adage(BaseModel):
     Usage: from tybalt.models import Adage
     """
     def __init__(self, original_dim, latent_dim, noise=0.05, batch_size=50,
-                 epochs=100, sparsity=0, learning_rate=1.1):
+                 epochs=100, sparsity=0, learning_rate=1.1,
+                 loss='mse'):
         BaseModel.__init__(self)
         self.original_dim = original_dim
         self.latent_dim = latent_dim
@@ -210,6 +211,7 @@ class Adage(BaseModel):
         self.epochs = epochs
         self.sparsity = sparsity
         self.learning_rate = learning_rate
+        self.loss = loss
 
     def initialize_model(self):
         """
@@ -242,7 +244,7 @@ class Adage(BaseModel):
     def compile_adage(self):
         # Compile the autoencoder to prepare for training
         adadelta = optimizers.Adadelta(lr=self.learning_rate)
-        self.full_model.compile(optimizer=adadelta, loss='mse')
+        self.full_model.compile(optimizer=adadelta, loss=self.loss)
 
     def train_adage(self, train_df, test_df):
         self.hist = self.full_model.fit(np.array(train_df), np.array(train_df),
