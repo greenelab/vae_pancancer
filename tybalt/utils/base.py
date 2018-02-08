@@ -73,9 +73,9 @@ class VAE(BaseModel):
         """
         Helper function to run that builds and compiles Keras layers
         """
-        self.build_encoder_layer()
-        self.build_decoder_layer()
-        self.compile_vae()
+        self._build_encoder_layer()
+        self._build_decoder_layer()
+        self._compile_vae()
 
     def compress(self, df):
         # Encode rnaseq into the hidden/latent representation - and save output
