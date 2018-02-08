@@ -42,7 +42,7 @@ class BaseModel():
         weights = []
         for layer in self.decoder.layers:
             weights.append(layer.get_weights())
-        return(weights)
+        return weights
 
     def save_models(self, encoder_file, decoder_file):
         self.encoder.save(encoder_file)
