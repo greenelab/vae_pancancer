@@ -41,7 +41,7 @@ class Tybalt(VAE):
         self.beta = beta
         self.loss = loss
 
-    def build_encoder_layer(self):
+    def _build_encoder_layer(self):
         """
         Function to build the encoder layer connections
         """
@@ -72,7 +72,7 @@ class Tybalt(VAE):
                         output_shape=(self.latent_dim, ))([self.z_mean_encoded,
                                                            self.z_var_encoded])
 
-    def build_decoder_layer(self):
+    def _build_decoder_layer(self):
         """
         Function to build the decoder layer connections
         """
@@ -83,7 +83,7 @@ class Tybalt(VAE):
                                      input_dim=self.latent_dim))
         self.rnaseq_reconstruct = self.decoder_model(self.z)
 
-    def compile_vae(self):
+    def _compile_vae(self):
         """
         Creates the vae layer and compiles all layer connections
         """
@@ -156,7 +156,7 @@ class cTybalt(VAE):
         self.beta = beta
         self.loss = loss
 
-    def build_encoder_layer(self):
+    def _build_encoder_layer(self):
         """
         Function to build the encoder layer connections for conditional VAE
         """
@@ -197,7 +197,7 @@ class cTybalt(VAE):
         # conditioned on the specific sample labels.
         self.zc = concatenate([self.z, self.label_input])
 
-    def build_decoder_layer(self):
+    def _build_decoder_layer(self):
         """
         Function to build the decoder layer connections for conditional VAE
         """
@@ -212,7 +212,7 @@ class cTybalt(VAE):
                                      input_dim=self.cvae_latent_dim))
         self.rnaseq_reconstruct = self.decoder_model(self.zc)
 
-    def compile_vae(self):
+    def _compile_vae(self):
         """
         Creates the vae layer and compiles all layer connections
         """
@@ -269,15 +269,7 @@ class Adage(BaseModel):
         self.learning_rate = learning_rate
         self.loss = loss
 
-    def initialize_model(self):
-        """
-        Helper function to run that builds and compiles Keras layers
-        """
-        self.build_graph()
-        self.connect_layers()
-        self.compile_adage()
-
-    def build_graph(self):
+    def _build_graph(self):
         # Build the Keras graph for an ADAGE model
         self.input_rnaseq = Input(shape=(self.original_dim, ))
         drop = Dropout(self.noise)(self.input_rnaseq)
@@ -289,6 +281,18 @@ class Adage(BaseModel):
 
         self.full_model = Model(self.input_rnaseq, decoded_rnaseq)
 
+    def _compile_adage(self):
+        # Compile the autoencoder to prepare for training
+        adadelta = optimizers.Adadelta(lr=self.learning_rate)
+        self.full_model.compile(optimizer=adadelta, loss=self.loss)
+
+    def initialize_model(self):
+        """
+        Helper function to run that builds and compiles Keras layers
+        """
+        self.build_graph()
+        self.compile_adage()
+
     def connect_layers(self):
         # Separate out the encoder and decoder model
         self.encoder = Model(self.input_rnaseq, self.encoded)
@@ -297,10 +301,6 @@ class Adage(BaseModel):
         decoder_layer = self.full_model.layers[-1]
         self.decoder = Model(encoded_input, decoder_layer(encoded_input))
 
-    def compile_adage(self):
-        # Compile the autoencoder to prepare for training
-        adadelta = optimizers.Adadelta(lr=self.learning_rate)
-        self.full_model.compile(optimizer=adadelta, loss=self.loss)
 
     def train_adage(self, train_df, test_df):
         self.hist = self.full_model.fit(np.array(train_df), np.array(train_df),
