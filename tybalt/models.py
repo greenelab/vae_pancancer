@@ -120,6 +120,9 @@ class cTybalt(VAE):
     """
     Training and evaluation of a cTybalt model (conditional VAE)
 
+    Modified from:
+    https://wiseodd.github.io/techblog/2016/12/17/conditional-vae/
+
     Usage: from tybalt.models import cTybalt
 
     cTybalt API:
