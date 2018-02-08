@@ -129,7 +129,7 @@ class cTybalt(VAE):
     ctybalt_model.compile_vae()
     ctybalt_model.get_summary()
     ctybalt_model.visualize_architecture('example_output_plot.png')
-    ctybalt_model.train(train_df, y_train, test_df, y_test)
+    ctybalt_model.train_cvae(train_df, y_train, test_df, y_test)
     ctybalt_model.visualize_training('training_curves.png')
     ctybalt_model.connect_layers()
     ctybalt_model.compress([new_data_df, new_data_y])
