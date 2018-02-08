@@ -10,6 +10,11 @@
 sampleGroupMatrix <- function(num_samples, mean_matrix, sd_matrix) {
   # Sample different "groups" based on mean and standard deviation matrices
   #
+  # Usage:
+  # Called within the function `getSimulatedExpression()` but can also be used
+  # to sample a given number of data points with the given mean and sd matrices
+  #
+  # Arguments:
   # num_samples - the number of samples to simulate
   # mean_matrix - a matrix of different group means
   # sd_matrix - a matrix of different group standard deviations
@@ -19,8 +24,16 @@ sampleGroupMatrix <- function(num_samples, mean_matrix, sd_matrix) {
   # (nrow = num groups) (ncol = num features that describe each group)
   #
   # Return:
-  # list of length 2 - 1st element is the group specific feature matrix
-  #                  - 2nd element is a vector of labels ('a', 'b', 'c', etc.)
+  # list of length 2:
+  #
+  # The 1st element is the group specific feature matrix storing
+  # length(num_samples) rows and ncol(mean_matrix) columns. Each column
+  # represents a feature sampled from a normal distribution with the mean
+  # provided by the columns of `mean_matrix` and standard deviation provided
+  # by the columns of `sd_matrix` The number of rows in mean and sd matrices
+  # represent the number of groups.
+  #  
+  # The 2nd element is a vector of group labels ("a", "b", "c", etc.)
 
   group_params <- c()
   group_name <- letters[1:nrow(mean_matrix)]
@@ -28,13 +41,21 @@ sampleGroupMatrix <- function(num_samples, mean_matrix, sd_matrix) {
     mean_vector <- mean_matrix[, param_idx]
     sd_vector <- sd_matrix[, param_idx]
 
-    group_vector <- rnorm(n, mean = mean_vector, sd = sd_vector)
+    group_vector <- rnorm(num_samples, mean = mean_vector, sd = sd_vector)
     group_params <- cbind(group_params, group_vector)
   }
 
-  return_list <- list()
-  return_list[[1]] <- group_params
-  return_list[[2]] <- rep(group_name, num_samples / length(group_name))
+  num_repeat <- num_samples %/% length(group_name)
+  num_remainder <- num_samples %% length(group_name)
+
+  labels <- rep(group_name, num_repeat)
+  
+  if (num_remainder > 0) {
+    labels <- c(labels, group_name[1:num_remainder])
+  }
+  
+
+  return_list <- list(group_params, labels)
   return(return_list)
 }
 
@@ -42,6 +63,11 @@ sampleGroupMatrix <- function(num_samples, mean_matrix, sd_matrix) {
 sampleCellMatrix <- function(num_samples, cell_mean_matrix, cell_sd_matrix) {
   # Sample "cell-types" and then add together with different proportions
   #
+  # Usage:
+  # Called within the function `getSimulatedExpression()` but can also be used
+  # to sample a given number of data points with the given mean and sd matrices
+  #
+  # Arguments:
   # num_samples - the number of samples to simulate
   # cell_mean_matrix - a matrix of cell-type means
   # cell_sd_matrix - a matrix of cell-type standard deviations
@@ -95,9 +121,18 @@ sampleCellMatrix <- function(num_samples, cell_mean_matrix, cell_sd_matrix) {
 
 getSimulatedExpression <- function(n, mean_df, sd_df, r, func_list, b,
                                    cell_type_mean_df, cell_type_sd_df,
-                                   zero_one_normalize = TRUE) {
-  # Obtain a matrix with simulated parameters of input size
+                                   seed, zero_one_normalize = TRUE) {
+  # Obtain a matrix with simulated parameters. The matrix dimensions will be:
+  # n by p, where p = ncol(mean_df) + r + length(func_list) + b +
+  #                   ncol(cell_type_mean_df)
   #
+  # Usage:
+  #             simulated_data <- getSimulatedExpression(<args>)
+  #
+  # This will output a matrix of samples by features that can be used to
+  # evaluate compression algorithms in a variety of tasks
+  #
+  # Arguments:
   # n - integer indicating the total number of samples
   # mean_df - matrix of means describing groups
   # sd_df - matrix of standard deviations describing groups
@@ -111,6 +146,7 @@ getSimulatedExpression <- function(n, mean_df, sd_df, r, func_list, b,
   # cell_type_sd_df - matrix of standard deviations describing cell-types
   #       Each row represents different cell types (only 2 currently supported)
   #       Each column represents features describing the cell types
+  # seed - add random seed as required argument
   # zero_one_normalize - boolean to zero one normalize simulated features
   #
   # Return:
@@ -119,59 +155,71 @@ getSimulatedExpression <- function(n, mean_df, sd_df, r, func_list, b,
   #                       membership, cell type proportion, and the domain of
   #                       the input functions.
 
-  if (sum(mean_df + sd_df) == 0) {
-    if (all(dim(mean_df) == dim(sd_df))) {
-      stop('provide the same number of mean and standard deviation parameters')
-    }
-  }
+  set.seed(seed)
 
   # Extract Group Features
-  group_params <- sampleGroupMatrix(n, mean_df, sd_df)
-  group_data <- group_params[[1]]
-  group_info <- group_params[[2]]
+  if (sum(mean_df + sd_df) != 0) {
+    if (all(dim(mean_df) != dim(sd_df))) {
+      stop("provide the same number of mean and standard deviation parameters")
+    } else {
+      group_params <- sampleGroupMatrix(n, mean_df, sd_df)
+      group_data <- group_params[[1]]
+      group_info <- group_params[[2]]
+    } 
+  } else {
+      group_data <- c()
+      group_info <- c()
+  }
+
 
   # Get Random Noise Features
   rand_params <- c()
-  for (rand_idx in 1:r) {
-    rand_vector <- runif(n, min = 0, max = 1)
-    rand_params <- cbind(rand_params, rand_vector)
+  if (r > 0) {
+    for (rand_idx in 1:r) {
+      rand_vector <- runif(n, min = 0, max = 1)
+      rand_params <- cbind(rand_params, rand_vector)
+    }
   }
 
   # Get Continuous Function Features
   cont_params <- c()
   cont_other_params <- c()
-  for (cont_idx in 1:length(func_list)) {
-    continuous_rand_x <- runif(n, min = -1, max = 1)
-    continuous_rand_y <- func_list[[cont_idx]](continuous_rand_x)
-    
-    cont_params <- cbind(cont_params, continuous_rand_y)
-    cont_other_params <- cbind(cont_other_params, continuous_rand_x)
-  }
-  
+  if (length(func_list) > 0) {
+    for (cont_idx in 1:length(func_list)) {
+      continuous_rand_x <- runif(n, min = -1, max = 1)
+      continuous_rand_y <- func_list[[cont_idx]](continuous_rand_x)
+      
+      cont_params <- cbind(cont_params, continuous_rand_y)
+      cont_other_params <- cbind(cont_other_params, continuous_rand_x)
+    }
+  } 
+
   # Get Presence/Absence of a Features
   pres_params <- c()
-  for (pres_idx in 1:b) {
-    rand_presence <- rnorm(n, mean = 1, sd = 0.5)
-    rand_zerone <- sample(c(0, 1), n, replace = TRUE)
-
-    rand_presence <- rand_presence * rand_zerone
-    pres_params <- cbind(pres_params, rand_presence)
+  if (b > 0) {
+    for (pres_idx in 1:b) {
+      rand_presence <- rnorm(n, mean = 1, sd = 0.5)
+      rand_zeroone <- sample(c(0, 1), n, replace = TRUE)
+      
+      rand_presence <- rand_presence * rand_zeroone
+      pres_params <- cbind(pres_params, rand_presence)
+    }
   }
 
   # Get cell-type Features
-  if (sum(cell_type_mean_df + cell_type_sd_df) == 0) {
-    if (all(dim(cell_type_mean_df) == dim(cell_type_sd_df))) {
-      stop('provide the same cell type parameter dimensions')
+  if (sum(cell_type_mean_df + cell_type_sd_df) != 0) {
+    if (all(dim(cell_type_mean_df) != dim(cell_type_sd_df))) {
+      stop("provide the same cell-type parameter dimensions")
     } else {
-      cell_type_data <- c()
-      cell_type_other <- c()
+      # This will generate cell-types and then automatically simulate
+      # differential cell-type proportion
+      cell_type_info <- sampleCellMatrix(n, cell_type_mean_df, cell_type_sd_df)
+      cell_type_data <- cell_type_info[[1]]
+      cell_type_other <- cell_type_info[[2]]
     }
   } else {
-    # This will generate cell-types and then automatically simulate
-    # differential cell-type proportion
-    cell_type_info <- sampleCellMatrix(n, cell_type_mean_df, cell_type_sd_df)
-    cell_type_data <- cell_type_info[[1]]
-    cell_type_other <- cell_type_info[[2]]
+    cell_type_data <- c()
+    cell_type_other <- c()
   }
 
   # Merge Features
