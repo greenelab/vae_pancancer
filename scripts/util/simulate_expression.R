@@ -217,7 +217,7 @@ getSimulatedExpression <- function(n, mean_df, sd_df, r, func_list, b,
   pres_df <- c()
   if (b > 0) {
     for (pres_idx in 1:b) {
-      rand_presence <- rnorm(n, mean = 1, sd = 0.5)
+      rand_presence <- rnorm(n, mean = 3, sd = 0.5)
       rand_zeroone <- sample(c(0, 1), n, replace = TRUE)
       
       rand_presence <- rand_presence * rand_zeroone
