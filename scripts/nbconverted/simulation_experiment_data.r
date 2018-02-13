@@ -48,7 +48,7 @@ for (num_noise_features in random_noise) {
   noise_idx <- noise_idx + 1
 }
 
-# Example with zero noise features
+# Example with 100 noise features
 head(sim_df)
 
 ggplot(sim_df, aes(x=group_1, y=group_2)) + geom_point(aes(color=groups), alpha=0.5) +
