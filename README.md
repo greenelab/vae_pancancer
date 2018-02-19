@@ -76,7 +76,7 @@ and activate this environment run:
 conda env create --force --file environment.yml
 
 # activate environment
-conda activate
+conda activate tybalt
 ```
 
 Tybalt is also configured to train on GPUs using
