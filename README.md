@@ -68,11 +68,25 @@ tumors.
 
 The current model training is explained in [this notebook](tybalt_vae.ipynb).
 
-Tybalt is configured to train on GPUs using
+Tybalt dependencies are listed in [`environment.yml`](environment.yml). To download
+and activate this environment run:
+
+```sh
+# conda version 4.4.10
+conda env create --force --file environment.yml
+
+# activate environment
+conda activate
+```
+
+Tybalt is also configured to train on GPUs using
 [`gpu-environment.yml`](gpu-environment.yml). To activate this environment run:
 
-```
+```sh
 # conda version 4.4.10
+conda env create --force --file gpu-environment.yml
+
+# activate environment
 conda activate tybalt-gpu
 ```
 
