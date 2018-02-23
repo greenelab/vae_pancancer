@@ -103,7 +103,7 @@ class Tybalt(VAE):
                                         epochs=self.epochs,
                                         batch_size=self.batch_size,
                                         validation_data=(np.array(test_df),
-                                                         np.array(test_df)),
+                                                         None),
                                         callbacks=[WarmUpCallback(self.beta,
                                                                   self.kappa)])
 
@@ -228,8 +228,7 @@ class cTybalt(VAE):
 
     def train_cvae(self, train_df, train_labels_df, test_df, test_labels_df):
         train_input = [np.array(train_df), np.array(train_labels_df)]
-        val_input = ([np.array(test_df), np.array(test_labels_df)],
-                     np.array(test_df))
+        val_input = ([np.array(test_df), np.array(test_labels_df)], None)
         self.hist = self.full_model.fit(train_input,
                                         shuffle=True,
                                         epochs=self.epochs,
@@ -289,17 +288,8 @@ class Adage(BaseModel):
         """
         Helper function to run that builds and compiles Keras layers
         """
-        self.build_graph()
-        self.compile_adage()
-
-    def connect_layers(self):
-        # Separate out the encoder and decoder model
-        self.encoder = Model(self.input_rnaseq, self.encoded)
-
-        encoded_input = Input(shape=(self.latent_dim, ))
-        decoder_layer = self.full_model.layers[-1]
-        self.decoder = Model(encoded_input, decoder_layer(encoded_input))
-
+        self._build_graph()
+        self._compile_adage()
 
     def train_adage(self, train_df, test_df):
         self.hist = self.full_model.fit(np.array(train_df), np.array(train_df),
@@ -308,6 +298,14 @@ class Adage(BaseModel):
                                         batch_size=self.batch_size,
                                         validation_data=(np.array(test_df),
                                                          np.array(test_df)))
+
+    def connect_layers(self):
+        # Separate out the encoder and decoder model
+        self.encoder = Model(self.input_rnaseq, self.encoded)
+
+        encoded_input = Input(shape=(self.latent_dim, ))
+        decoder_layer = self.full_model.layers[-1]
+        self.decoder = Model(encoded_input, decoder_layer(encoded_input))
 
     def compress(self, df):
         # Encode rnaseq into the hidden/latent representation - and save output
