@@ -97,6 +97,14 @@ class Tybalt(VAE):
         self.full_model.compile(optimizer=adam, loss=None,
                                 loss_weights=[self.beta])
 
+    def _connect_layers(self):
+        # Make connections between layers to build separate encoder and decoder
+        self.encoder = Model(self.rnaseq_input, self.z_mean_encoded)
+
+        decoder_input = Input(shape=(self.latent_dim, ))
+        _x_decoded_mean = self.decoder_model(decoder_input)
+        self.decoder = Model(decoder_input, _x_decoded_mean)
+
     def train_vae(self, train_df, test_df):
         self.hist = self.full_model.fit(np.array(train_df),
                                         shuffle=True,
@@ -106,14 +114,6 @@ class Tybalt(VAE):
                                                          None),
                                         callbacks=[WarmUpCallback(self.beta,
                                                                   self.kappa)])
-
-    def connect_layers(self):
-        # Make connections between layers to build separate encoder and decoder
-        self.encoder = Model(self.rnaseq_input, self.z_mean_encoded)
-
-        decoder_input = Input(shape=(self.latent_dim, ))
-        _x_decoded_mean = self.decoder_model(decoder_input)
-        self.decoder = Model(decoder_input, _x_decoded_mean)
 
 
 class cTybalt(VAE):
@@ -226,6 +226,15 @@ class cTybalt(VAE):
         self.full_model.compile(optimizer=adam, loss=None,
                                 loss_weights=[self.beta])
 
+    def _connect_layers(self):
+        # Make connections between layers to build separate encoder and decoder
+        self.encoder = Model([self.rnaseq_input, self.label_input],
+                             self.z_mean_encoded)
+
+        decoder_input = Input(shape=(self.cvae_latent_dim, ))
+        _x_decoded_mean = self.decoder_model(decoder_input)
+        self.decoder = Model(decoder_input, _x_decoded_mean)
+
     def train_cvae(self, train_df, train_labels_df, test_df, test_labels_df):
         train_input = [np.array(train_df), np.array(train_labels_df)]
         val_input = ([np.array(test_df), np.array(test_labels_df)], None)
@@ -236,15 +245,6 @@ class cTybalt(VAE):
                                         validation_data=val_input,
                                         callbacks=[WarmUpCallback(self.beta,
                                                                   self.kappa)])
-
-    def connect_layers(self):
-        # Make connections between layers to build separate encoder and decoder
-        self.encoder = Model([self.rnaseq_input, self.label_input],
-                             self.z_mean_encoded)
-
-        decoder_input = Input(shape=(self.cvae_latent_dim, ))
-        _x_decoded_mean = self.decoder_model(decoder_input)
-        self.decoder = Model(decoder_input, _x_decoded_mean)
 
 
 class Adage(BaseModel):
@@ -284,12 +284,21 @@ class Adage(BaseModel):
         adadelta = optimizers.Adadelta(lr=self.learning_rate)
         self.full_model.compile(optimizer=adadelta, loss=self.loss)
 
+    def _connect_layers(self):
+        # Separate out the encoder and decoder model
+        self.encoder = Model(self.input_rnaseq, self.encoded)
+
+        encoded_input = Input(shape=(self.latent_dim, ))
+        decoder_layer = self.full_model.layers[-1]
+        self.decoder = Model(encoded_input, decoder_layer(encoded_input))
+
     def initialize_model(self):
         """
         Helper function to run that builds and compiles Keras layers
         """
         self._build_graph()
         self._compile_adage()
+        self._connect_layers()
 
     def train_adage(self, train_df, test_df):
         self.hist = self.full_model.fit(np.array(train_df), np.array(train_df),
@@ -298,14 +307,6 @@ class Adage(BaseModel):
                                         batch_size=self.batch_size,
                                         validation_data=(np.array(test_df),
                                                          np.array(test_df)))
-
-    def connect_layers(self):
-        # Separate out the encoder and decoder model
-        self.encoder = Model(self.input_rnaseq, self.encoded)
-
-        encoded_input = Input(shape=(self.latent_dim, ))
-        decoder_layer = self.full_model.layers[-1]
-        self.decoder = Model(encoded_input, decoder_layer(encoded_input))
 
     def compress(self, df):
         # Encode rnaseq into the hidden/latent representation - and save output
