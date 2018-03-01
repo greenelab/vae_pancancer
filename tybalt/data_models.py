@@ -124,15 +124,13 @@ class DataModel():
         beta = K.variable(beta)
         loss = kwargs.pop('loss', 'binary_crossentropy')
         validation_ratio = kwargs.pop('validation_ratio', 0.1)
-        if model == 'ctybalt':
+
+        # Extra processing for conditional vae
+        if hasattr(self, 'other_df') and model == 'ctybalt':
             y_df = kwargs.pop('y_df', self.other_df)
             y_var = kwargs.pop('y_var', 'groups')
             label_dim = kwargs.pop('label_dim', len(set(y_df[y_var])))
 
-        self.nn_test_df = self.df.sample(frac=validation_ratio)
-        self.nn_train_df = self.df.drop(self.nn_test_df.index)
-
-        if hasattr(self, 'other_df'):
             self.nn_train_y = y_df.drop(self.nn_test_df.index)
             self.nn_test_y = y_df.drop(self.nn_train_df.index)
             self.nn_train_y = self.nn_train_y.loc[self.nn_train_df.index, ]
@@ -147,6 +145,9 @@ class DataModel():
             self.nn_train_y = to_categorical(self.nn_train_y)
             self.nn_test_y = to_categorical(self.nn_test_y)
             self.other_onehot = to_categorical(self.other_onehot)
+
+        self.nn_test_df = self.df.sample(frac=validation_ratio)
+        self.nn_train_df = self.df.drop(self.nn_test_df.index)
 
         if model == 'tybalt':
             self.tybalt_fit = Tybalt(original_dim=original_dim,
