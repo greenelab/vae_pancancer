@@ -77,8 +77,7 @@ class DataModel():
 
     def pca(self, n_components, transform_df=False):
         self.pca_fit = decomposition.PCA(n_components=n_components)
-        self.pca_fit = self.pca_fit.fit(self.df)
-        self.pca_df = self.pca_fit.transform(self.df)
+        self.pca_df = self.pca_fit.fit_transform(self.df)
         colnames = ['pca_{}'.format(x) for x in range(0, n_components)]
         self.pca_df = pd.DataFrame(self.pca_df, index=self.df.index,
                                    columns=colnames)
@@ -88,8 +87,7 @@ class DataModel():
 
     def ica(self, n_components, transform_df=False):
         self.ica_fit = decomposition.FastICA(n_components=n_components)
-        self.ica_fit = self.ica_fit.fit(self.df)
-        self.ica_df = self.ica_fit.transform(self.df)
+        self.ica_df = self.ica_fit.fit_transform(self.df)
         colnames = ['ica_{}'.format(x) for x in range(0, n_components)]
         self.ica_df = pd.DataFrame(self.ica_df, index=self.df.index,
                                    columns=colnames)
@@ -100,8 +98,7 @@ class DataModel():
     def nmf(self, n_components, transform_df=False, init='nndsvdar', tol=5e-3):
         self.nmf_fit = decomposition.NMF(n_components=n_components, init=init,
                                          tol=tol)
-        self.nmf_fit = self.nmf_fit.fit(self.df)
-        self.nmf_df = self.nmf_fit.transform(self.df)
+        self.nmf_df = self.nmf_fit.fit_transform(self.df)
         colnames = ['nmf_{}'.format(x) for x in range(0, n_components)]
         self.nmf_df = pd.DataFrame(self.nmf_df, index=self.df.index,
                                    columns=colnames)
