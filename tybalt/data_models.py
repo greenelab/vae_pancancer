@@ -65,13 +65,13 @@ class DataModel():
     def transform(self, how):
         self.transformation = how
         if how == 'zscore':
-            self.transform_fit = StandardScaler.fit(self.df)
+            self.transform_fit = StandardScaler().fit(self.df)
         elif how == 'zeroone':
-            self.transform_fit = MinMaxScaler.fit(self.df)
+            self.transform_fit = MinMaxScaler().fit(self.df)
         else:
             raise ValueError('how must be either "zscore" or "zeroone".')
 
-        self.df = pd.DataFrame(self.transform_fit(self.df),
+        self.df = pd.DataFrame(self.transform_fit.transform(self.df),
                                index=self.df.index,
                                columns=self.df.columns)
 
@@ -116,7 +116,7 @@ class DataModel():
         batch_size = kwargs.pop('batch_size', 50)
         epochs = kwargs.pop('epochs', 50)
         learning_rate = kwargs.pop('learning_rate', 0.0005)
-        noise = kwargs.pop('noise', 0.05)
+        noise = kwargs.pop('noise', 0)
         sparsity = kwargs.pop('sparsity', 0)
         kappa = kwargs.pop('kappa', 1)
         epsilon_std = kwargs.pop('epsilon_std', 1.0)
@@ -161,7 +161,6 @@ class DataModel():
             self.tybalt_fit.initialize_model()
             self.tybalt_fit.train_vae(train_df=self.nn_train_df,
                                       test_df=self.nn_test_df)
-            self.tybalt_fit.connect_layers()
             self.tybalt_weights = self.tybalt_fit.get_decoder_weights()
 
             self.tybalt_df = self.tybalt_fit.compress(self.df)
@@ -188,7 +187,6 @@ class DataModel():
                                         train_labels_df=self.nn_train_y,
                                         test_df=self.nn_test_df,
                                         test_labels_df=self.nn_test_y)
-            self.ctybalt_fit.connect_layers()
             self.ctybalt_weights = self.ctybalt_fit.get_decoder_weights()
 
             self.ctybalt_df = self.ctybalt_fit.compress([self.df,
@@ -213,7 +211,6 @@ class DataModel():
             self.adage_fit.initialize_model()
             self.adage_fit.train_adage(train_df=self.nn_train_df,
                                        test_df=self.nn_test_df)
-            self.adage_fit.connect_layers()
             self.adage_weights = self.adage_fit.get_decoder_weights()
 
             self.adage_df = self.adage_fit.compress(self.df)
