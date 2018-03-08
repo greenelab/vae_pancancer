@@ -31,9 +31,11 @@ Usage:
 """
 
 import pandas as pd
+from scipy.stats.mstats import zscore
 
 from sklearn import decomposition
 from sklearn.preprocessing import LabelEncoder, StandardScaler, MinMaxScaler
+from sklearn.metrics.pairwise import euclidean_distances
 from keras import backend as K
 from keras.utils import to_categorical
 
@@ -278,7 +280,15 @@ class DataModel():
         all_df = pd.concat(all_models, axis=1)
         return all_df
 
-    def get_modules_ranks(self, weight_df, noise_column=0):
+    def get_modules_ranks(self, weight_df, num_components, noise_column=0):
+        """
+        Takes a compression algorithm's weight matrix (gene by latent feature),
+        and reports two performance metrics:
+            1) mean rank sum across modules:
+               measures how well modules are separated into features
+            2) min average rank across modules:
+               measures how well modules of decreasing proportion are captured
+        """
         # Rank absolute value compressed features for each gene
         weight_rank_df = weight_df.abs().rank(axis=0, ascending=False)
 
@@ -287,17 +297,33 @@ class DataModel():
         module_w_df = module_w_df.astype(int)
 
         # Get the total module by compressed feature mean rank
-        module_meanrank_df = (module_w_df.T.groupby('modules').mean() - 1).T
+        module_meanrank_df = (module_w_df.T.groupby('modules').mean()).T
 
         # Drop the noise column and get the sum of the minimum mean rank.
         # This heuristic measures, on average, how well individual compressed
         # features capture ground truth gene modules. A lower number indicates
         # better separation performance for the algorithm of interest
-        module_meanrank_minsum = (
-            module_meanrank_df.drop(noise_column, axis=1).min(axis=0).sum()
-            )
+        if noise_column:
+            module_meanrank_minsum = (
+                module_meanrank_df.drop(noise_column, axis=1).min(axis=0).sum()
+                )
+            denom = num_components - 1
+        else:
+            module_meanrank_minsum = module_meanrank_df.min(axis=0).sum()
+            denom = num_components
 
-        return (module_meanrank_df, module_meanrank_minsum)
+        # Process output data
+        # Divide this by the total number of features in the model. Subtract by
+        # one to account for the dropped noise column, if applicable
+        module_meanrank_minavg = module_meanrank_minsum / denom
+
+        # We are interested if the features encapsulate gene modules
+        # A lower number across modules indicates a stronger ability to
+        # aggregate genes into features
+        module_min_rank = pd.DataFrame(module_meanrank_df.min(),
+                                       columns=['min_rank'])
+
+        return module_meanrank_df, module_min_rank, module_meanrank_minavg
 
     def get_group_means(self, df):
         """
@@ -305,7 +331,7 @@ class DataModel():
         """
         return df.assign(groups=self.other_df).groupby('groups').mean()
 
-    def subtraction_test(self, group_means, group_list):
+    def get_subtraction(self, group_means, group_list):
         """
         Subtract two group means given by group list
         """
@@ -318,59 +344,134 @@ class DataModel():
 
         return subtraction
 
-    def sub_essense_difference(self, subtraction, mean_rank, node):
+    def subtraction_essense(self, group_subtract, mean_rank, node):
         """
         Obtain the difference between the subtraction and node of interest
         """
-        feature_essense = mean_rank.iloc[:, node]
+        # subset mean rank to node of the "dropped" feature in the simulation
+        feature_essense = mean_rank.loc[:, node]
+
+        # The node essense is the compressed feature with the lowest mean rank
         node_essense = feature_essense.idxmin()
+        node_idx = int(node_essense.split('_')[1])
 
-        difference = subtraction - subtraction.loc[:, node_essense].tolist()[0]
+        # Ask how different this specific feature is from all others
+        group_z = zscore(group_subtract.iloc[0, :].tolist())
+        node_essense_zscore = group_z[node_idx]
 
-        min_node = difference.drop(node_essense, axis=1).abs().idxmin(axis=1)
-        relative_min_difference = difference.loc[:, min_node].values[0][0]
-        return relative_min_difference
+        return node_essense_zscore
 
-    def _wrap_sub_eval(self, weight_df, compress_df, noise_column, group_list,
-                       node):
-        mean_rank, min_sum = self.get_modules_ranks(weight_df, noise_column)
+    def get_addition(self, group_means, subtraction, group):
+        """
+        Add node to subtraction
+        """
+        mean_feature = group_means.loc[group, :]
+        return subtraction + mean_feature
+
+    def reconstruct_group(self, lsa_result, algorithm=False):
+        """
+        Reconstruct the latent space arithmetic result back to input dim
+        """
+        if algorithm == 'tybalt':
+            return self.tybalt_fit.decoder.predict_on_batch(lsa_result)
+        elif algorithm == 'ctybalt':
+            return self.ctybalt_fit.decoder.predict_on_batch(lsa_result)
+        elif algorithm == 'adage':
+            return self.adage_fit.decoder.predict_on_batch(lsa_result)
+        elif algorithm == 'pca':
+            return self.pca_fit.inverse_transform(lsa_result)
+        elif algorithm == 'ica':
+            return self.ica_fit.inverse_transform(lsa_result)
+        elif algorithm == 'nmf':
+            return self.nmf_fit.inverse_transform(lsa_result)
+
+    def get_average_distance(self, transform_df, real_df):
+        """
+        Obtain the average euclidean distance between the transformed vector
+        and all samples as part of the real dataframe
+        """
+        return euclidean_distances(transform_df, real_df).mean()
+
+    def _wrap_sub_eval(self, weight_df, compress_df, num_components,
+                       noise_column, subtraction_groups, addition_group, node,
+                       real_df, algorithm):
+        """
+        Helper function that wraps all evals
+        """
+        # Get the module mean rank and the min rank sum
+        mean_rank_mod, mean_rank_min, min_rank_avg = (
+            self.get_modules_ranks(weight_df, num_components, noise_column)
+        )
+
+        # Begin subtraction analysis - first, get group means
         group_means = self.get_group_means(compress_df)
-        sub = self.subtraction_test(group_means, group_list)
-        min_diff = self.sub_essense_difference(sub, mean_rank, node)
 
-        return mean_rank, min_diff
+        # Next, get the subtraction result
+        sub_result = self.get_subtraction(group_means, subtraction_groups)
 
+        # Then, get the relative minimum difference to determine if the
+        # subtraction isolates the feature we expect is should - and how much
+        relative_min_diff = self.subtraction_essense(sub_result,
+                                                     mean_rank_mod, node)
 
-    def subtraction_eval(self, noise_column, group_list, node):
+        # Now reconstruct the subtraction back into original space
+        lsa_result = self.get_addition(group_means, sub_result, addition_group)
+        recon_lsa = self.reconstruct_group(lsa_result, algorithm)
+        avg_dist = self.get_average_distance(recon_lsa, real_df)
+
+        return mean_rank_min, min_rank_avg, relative_min_diff, avg_dist
+
+    def subtraction_eval(self, num_components, noise_column, group_list,
+                         add_groups, expect_node, real_df, cvae=False):
         return_rank_dict = {}
-        tybalt_rank, tybalt_diff = self._wrap_sub_eval(self.tybalt_weights,
-                                                       self.tybalt_df,
-                                                       noise_column,
-                                                       group_list,
-                                                       node)
-        adage_rank, adage_diff = self._wrap_sub_eval(self.adage_weights,
-                                                     self.adage_df,
-                                                     noise_column,
-                                                     group_list,
-                                                     node)
-        pca_rank, pca_diff = self._wrap_sub_eval(self.pca_weights,
-                                                 self.pca_df,
-                                                 noise_column,
-                                                 group_list,
-                                                 node)
-        ica_rank, ica_diff = self._wrap_sub_eval(self.ica_weights,
-                                                 self.ica_df,
-                                                 noise_column,
-                                                 group_list,
-                                                 node)
-        nmf_rank, nmf_diff = self._wrap_sub_eval(self.nmf_weights,
-                                                 self.nmf_df,
-                                                 noise_column,
-                                                 group_list,
-                                                 node)
-        return_rank_dict['tybalt'] = (tybalt_rank, tybalt_diff)
-        return_rank_dict['adage'] = (adage_rank, adage_diff)
-        return_rank_dict['pca'] = (pca_rank, pca_diff)
-        return_rank_dict['ica'] = (ica_rank, ica_diff)
-        return_rank_dict['nmf'] = (nmf_rank, nmf_diff)
+        tybalt_results = self._wrap_sub_eval(weight_df=self.tybalt_weights,
+                                             compress_df=self.tybalt_df,
+                                             num_components=num_components,
+                                             noise_column=noise_column,
+                                             subtraction_groups=group_list,
+                                             addition_group=add_groups,
+                                             node=expect_node,
+                                             real_df=real_df,
+                                             algorithm='tybalt')
+        adage_results = self._wrap_sub_eval(weight_df=self.adage_weights,
+                                            compress_df=self.adage_df,
+                                            num_components=num_components,
+                                            noise_column=noise_column,
+                                            subtraction_groups=group_list,
+                                            addition_group=add_groups,
+                                            node=expect_node,
+                                            real_df=real_df,
+                                            algorithm='adage')
+        pca_results = self._wrap_sub_eval(weight_df=self.pca_weights,
+                                          compress_df=self.pca_df,
+                                          num_components=num_components,
+                                          noise_column=noise_column,
+                                          subtraction_groups=group_list,
+                                          addition_group=add_groups,
+                                          node=expect_node,
+                                          real_df=real_df,
+                                          algorithm='pca')
+        ica_results = self._wrap_sub_eval(weight_df=self.ica_weights,
+                                          compress_df=self.ica_df,
+                                          num_components=num_components,
+                                          noise_column=noise_column,
+                                          subtraction_groups=group_list,
+                                          addition_group=add_groups,
+                                          node=expect_node,
+                                          real_df=real_df,
+                                          algorithm='ica')
+        nmf_results = self._wrap_sub_eval(weight_df=self.nmf_weights,
+                                          compress_df=self.nmf_df,
+                                          num_components=num_components,
+                                          noise_column=noise_column,
+                                          subtraction_groups=group_list,
+                                          addition_group=add_groups,
+                                          node=expect_node,
+                                          real_df=real_df,
+                                          algorithm='nmf')
+        return_rank_dict['tybalt'] = tybalt_results
+        return_rank_dict['adage'] = adage_results
+        return_rank_dict['pca'] = pca_results
+        return_rank_dict['ica'] = ica_results
+        return_rank_dict['nmf'] = nmf_results
         return return_rank_dict
