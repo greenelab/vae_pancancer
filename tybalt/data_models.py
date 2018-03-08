@@ -49,7 +49,8 @@ class DataModel():
 
     data = DataModel(filename)
     """
-    def __init__(self, filename=None, df=False, select_columns=False):
+    def __init__(self, filename=None, df=False, select_columns=False,
+                 gene_modules=None):
         self.filename = filename
         if filename is None:
             self.df = df
@@ -61,6 +62,10 @@ class DataModel():
             other_columns = range(max(select_columns) + 1, self.df.shape[1])
             self.other_df = self.df.iloc[:, other_columns]
             self.df = subset_df
+
+        if gene_modules is not None:
+            self.gene_modules = pd.DataFrame(gene_modules).T
+            self.gene_modules.index = ['modules']
 
     def transform(self, how):
         self.transformation = how
@@ -81,6 +86,9 @@ class DataModel():
         colnames = ['pca_{}'.format(x) for x in range(0, n_components)]
         self.pca_df = pd.DataFrame(self.pca_df, index=self.df.index,
                                    columns=colnames)
+        self.pca_weights = pd.DataFrame(self.pca_fit.components_,
+                                        columns=self.df.columns,
+                                        index=colnames)
         if transform_df:
             out_df = self.pca_fit.transform(transform_df)
             return out_df
@@ -91,6 +99,10 @@ class DataModel():
         colnames = ['ica_{}'.format(x) for x in range(0, n_components)]
         self.ica_df = pd.DataFrame(self.ica_df, index=self.df.index,
                                    columns=colnames)
+        self.ica_weights = pd.DataFrame(self.ica_fit.components_,
+                                        columns=self.df.columns,
+                                        index=colnames)
+
         if transform_df:
             out_df = self.ica_fit.transform(transform_df)
             return out_df
@@ -99,9 +111,13 @@ class DataModel():
         self.nmf_fit = decomposition.NMF(n_components=n_components, init=init,
                                          tol=tol)
         self.nmf_df = self.nmf_fit.fit_transform(self.df)
-        colnames = ['nmf_{}'.format(x) for x in range(0, n_components)]
+        colnames = ['nmf_{}'.format(x) for x in range(n_components)]
+
         self.nmf_df = pd.DataFrame(self.nmf_df, index=self.df.index,
                                    columns=colnames)
+        self.nmf_weights = pd.DataFrame(self.nmf_fit.components_,
+                                        columns=self.df.columns,
+                                        index=colnames)
         if transform_df:
             out_df = self.nmf_fit.transform(transform_df)
             return out_df
@@ -159,12 +175,15 @@ class DataModel():
             self.tybalt_fit.initialize_model()
             self.tybalt_fit.train_vae(train_df=self.nn_train_df,
                                       test_df=self.nn_test_df)
-            self.tybalt_weights = self.tybalt_fit.get_decoder_weights()
+            self.tybalt_decoder_w = self.tybalt_fit.get_decoder_weights()
+
+            features = ['vae_{}'.format(x) for x in range(0, latent_dim)]
+            self.tybalt_weights = pd.DataFrame(self.tybalt_decoder_w[1][0],
+                                              columns=self.df.columns,
+                                              index=features)
 
             self.tybalt_df = self.tybalt_fit.compress(self.df)
-            colnames = ['vae_{}'.format(x) for x in range(0, latent_dim)]
-            self.tybalt_df.columns = colnames
-
+            self.tybalt_df.columns = features
             if transform_df:
                 out_df = self.tybalt_fit.compress(transform_df)
                 return out_df
@@ -185,13 +204,22 @@ class DataModel():
                                         train_labels_df=self.nn_train_y,
                                         test_df=self.nn_test_df,
                                         test_labels_df=self.nn_test_y)
-            self.ctybalt_weights = self.ctybalt_fit.get_decoder_weights()
+            self.ctybalt_decoder_w = self.ctybalt_fit.get_decoder_weights()
+
+            # TODO - What are the cVAE weights doing
+            features = ['cvae_{}'.format(x) for x in range(0, latent_dim)]
+
+            w = pd.DataFrame(self.ctybalt_decoder_w[1][0])
+            self.ctybalt_group_w = pd.DataFrame(w.iloc[:, -label_dim:])
+
+            gene_range = range(0, w.shape[1] - label_dim)
+            self.ctybalt_weights = pd.DataFrame(w.iloc[:, gene_range],
+                                                columns=self.df.columns,
+                                                index=features)
 
             self.ctybalt_df = self.ctybalt_fit.compress([self.df,
                                                          self.other_onehot])
-            colnames = ['cvae_{}'.format(x) for x in range(0, latent_dim)]
-            self.ctybalt_df.columns = colnames
-
+            self.ctybalt_df.columns = features
             if transform_df:
                 # Note: transform_df must be a list of two dfs [x_df, y_df]
                 out_df = self.ctybalt_fit.compress(transform_df)
@@ -209,11 +237,15 @@ class DataModel():
             self.adage_fit.initialize_model()
             self.adage_fit.train_adage(train_df=self.nn_train_df,
                                        test_df=self.nn_test_df)
-            self.adage_weights = self.adage_fit.get_decoder_weights()
+            self.adage_decoder_w = self.adage_fit.get_decoder_weights()
+
+            features = ['dae_{}'.format(x) for x in range(0, latent_dim)]
+            self.adage_weights = pd.DataFrame(self.adage_decoder_w[1][0],
+                                              columns=self.df.columns,
+                                              index=features)
 
             self.adage_df = self.adage_fit.compress(self.df)
-            colnames = ['dae_{}'.format(x) for x in range(0, latent_dim)]
-            self.adage_df.columns = colnames
+            self.adage_df.columns = features
             if transform_df:
                 out_df = self.adage_fit.compress(transform_df)
                 return out_df
@@ -241,3 +273,100 @@ class DataModel():
 
         all_df = pd.concat(all_models, axis=1)
         return all_df
+
+    def get_modules_ranks(self, weight_df, noise_column=0):
+        # Rank absolute value compressed features for each gene
+        weight_rank_df = weight_df.abs().rank(axis=0, ascending=False)
+
+        # Add gene module membership to ranks
+        module_w_df = pd.concat([weight_rank_df, self.gene_modules], axis=0)
+        module_w_df = module_w_df.astype(int)
+
+        # Get the total module by compressed feature mean rank
+        module_meanrank_df = (module_w_df.T.groupby('modules').mean() - 1).T
+
+        # Drop the noise column and get the sum of the minimum mean rank.
+        # This heuristic measures, on average, how well individual compressed
+        # features capture ground truth gene modules. A lower number indicates
+        # better separation performance for the algorithm of interest
+        module_meanrank_minsum = (
+            module_meanrank_df.drop(noise_column, axis=1).min(axis=0).sum()
+            )
+
+        return (module_meanrank_df, module_meanrank_minsum)
+
+    def get_group_means(self, df):
+        """
+        Get the mean latent space vector representation of input groups
+        """
+        return df.assign(groups=self.other_df).groupby('groups').mean()
+
+    def subtraction_test(self, group_means, group_list):
+        """
+        Subtract two group means given by group list
+        """
+        a, b = group_list
+
+        a_df = group_means.loc[a, :]
+        b_df = group_means.loc[b, :]
+
+        subtraction = pd.DataFrame(a_df - b_df).T
+
+        return subtraction
+
+    def sub_essense_difference(self, subtraction, mean_rank, node):
+        """
+        Obtain the difference between the subtraction and node of interest
+        """
+        feature_essense = mean_rank.iloc[:, node]
+        node_essense = feature_essense.idxmin()
+
+        difference = subtraction - subtraction.loc[:, node_essense].tolist()[0]
+
+        min_node = difference.drop(node_essense, axis=1).abs().idxmin(axis=1)
+        relative_min_difference = difference.loc[:, min_node].values[0][0]
+        return relative_min_difference
+
+    def _wrap_sub_eval(self, weight_df, compress_df, noise_column, group_list,
+                       node):
+        mean_rank, min_sum = self.get_modules_ranks(weight_df, noise_column)
+        group_means = self.get_group_means(compress_df)
+        sub = self.subtraction_test(group_means, group_list)
+        min_diff = self.sub_essense_difference(sub, mean_rank, node)
+
+        return mean_rank, min_diff
+
+
+    def subtraction_eval(self, noise_column, group_list, node):
+        return_rank_dict = {}
+        tybalt_rank, tybalt_diff = self._wrap_sub_eval(self.tybalt_weights,
+                                                       self.tybalt_df,
+                                                       noise_column,
+                                                       group_list,
+                                                       node)
+        adage_rank, adage_diff = self._wrap_sub_eval(self.adage_weights,
+                                                     self.adage_df,
+                                                     noise_column,
+                                                     group_list,
+                                                     node)
+        pca_rank, pca_diff = self._wrap_sub_eval(self.pca_weights,
+                                                 self.pca_df,
+                                                 noise_column,
+                                                 group_list,
+                                                 node)
+        ica_rank, ica_diff = self._wrap_sub_eval(self.ica_weights,
+                                                 self.ica_df,
+                                                 noise_column,
+                                                 group_list,
+                                                 node)
+        nmf_rank, nmf_diff = self._wrap_sub_eval(self.nmf_weights,
+                                                 self.nmf_df,
+                                                 noise_column,
+                                                 group_list,
+                                                 node)
+        return_rank_dict['tybalt'] = (tybalt_rank, tybalt_diff)
+        return_rank_dict['adage'] = (adage_rank, adage_diff)
+        return_rank_dict['pca'] = (pca_rank, pca_diff)
+        return_rank_dict['ica'] = (ica_rank, ica_diff)
+        return_rank_dict['nmf'] = (nmf_rank, nmf_diff)
+        return return_rank_dict
