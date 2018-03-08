@@ -28,7 +28,8 @@ class Tybalt(VAE):
     """
     def __init__(self, original_dim, latent_dim, batch_size=50, epochs=50,
                  learning_rate=0.0005, kappa=1, epsilon_std=1.0,
-                 beta=K.variable(0), loss='binary_crossentropy'):
+                 beta=K.variable(0), loss='binary_crossentropy',
+                 verbose=True):
         VAE.__init__(self)
         self.model_name = 'Tybalt'
         self.original_dim = original_dim
@@ -40,6 +41,7 @@ class Tybalt(VAE):
         self.epsilon_std = epsilon_std
         self.beta = beta
         self.loss = loss
+        self.verbose = verbose
 
     def _build_encoder_layer(self):
         """
@@ -110,6 +112,7 @@ class Tybalt(VAE):
                                         shuffle=True,
                                         epochs=self.epochs,
                                         batch_size=self.batch_size,
+                                        verbose=self.verbose,
                                         validation_data=(np.array(test_df),
                                                          None),
                                         callbacks=[WarmUpCallback(self.beta,
@@ -141,7 +144,7 @@ class cTybalt(VAE):
     def __init__(self, original_dim, latent_dim, label_dim,
                  batch_size=50, epochs=50, learning_rate=0.0005, kappa=1,
                  epsilon_std=1.0, beta=K.variable(0),
-                 loss='binary_crossentropy'):
+                 loss='binary_crossentropy', verbose=True):
         VAE.__init__(self)
         self.model_name = 'cTybalt'
         self.original_dim = original_dim
@@ -154,6 +157,7 @@ class cTybalt(VAE):
         self.epsilon_std = epsilon_std
         self.beta = beta
         self.loss = loss
+        self.verbose = verbose
 
     def _build_encoder_layer(self):
         """
@@ -241,6 +245,7 @@ class cTybalt(VAE):
         self.hist = self.full_model.fit(train_input,
                                         shuffle=True,
                                         epochs=self.epochs,
+                                        verbose=self.verbose,
                                         batch_size=self.batch_size,
                                         validation_data=val_input,
                                         callbacks=[WarmUpCallback(self.beta,
@@ -255,7 +260,7 @@ class Adage(BaseModel):
     """
     def __init__(self, original_dim, latent_dim, noise=0.05, batch_size=50,
                  epochs=100, sparsity=0, learning_rate=1.1,
-                 loss='mse'):
+                 loss='mse', verbose=True):
         BaseModel.__init__(self)
         self.model_name = 'ADAGE'
         self.original_dim = original_dim
@@ -266,6 +271,7 @@ class Adage(BaseModel):
         self.sparsity = sparsity
         self.learning_rate = learning_rate
         self.loss = loss
+        self.verbose = verbose
 
     def _build_graph(self):
         # Build the Keras graph for an ADAGE model
@@ -304,6 +310,7 @@ class Adage(BaseModel):
         self.hist = self.full_model.fit(np.array(train_df), np.array(train_df),
                                         shuffle=True,
                                         epochs=self.epochs,
+                                        verbose=self.verbose,
                                         batch_size=self.batch_size,
                                         validation_data=(np.array(test_df),
                                                          np.array(test_df)))
