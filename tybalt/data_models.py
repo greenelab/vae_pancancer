@@ -137,6 +137,7 @@ class DataModel():
         beta = K.variable(beta)
         loss = kwargs.pop('loss', 'binary_crossentropy')
         validation_ratio = kwargs.pop('validation_ratio', 0.1)
+        verbose = kwargs.pop('verbose', True)
 
         # Extra processing for conditional vae
         if hasattr(self, 'other_df') and model == 'ctybalt':
@@ -171,7 +172,8 @@ class DataModel():
                                      kappa=kappa,
                                      epsilon_std=epsilon_std,
                                      beta=beta,
-                                     loss=loss)
+                                     loss=loss,
+                                     verbose=verbose)
             self.tybalt_fit.initialize_model()
             self.tybalt_fit.train_vae(train_df=self.nn_train_df,
                                       test_df=self.nn_test_df)
@@ -179,8 +181,8 @@ class DataModel():
 
             features = ['vae_{}'.format(x) for x in range(0, latent_dim)]
             self.tybalt_weights = pd.DataFrame(self.tybalt_decoder_w[1][0],
-                                              columns=self.df.columns,
-                                              index=features)
+                                               columns=self.df.columns,
+                                               index=features)
 
             self.tybalt_df = self.tybalt_fit.compress(self.df)
             self.tybalt_df.columns = features
@@ -198,7 +200,8 @@ class DataModel():
                                        kappa=kappa,
                                        epsilon_std=epsilon_std,
                                        beta=beta,
-                                       loss=loss)
+                                       loss=loss,
+                                       verbose=verbose)
             self.ctybalt_fit.initialize_model()
             self.ctybalt_fit.train_cvae(train_df=self.nn_train_df,
                                         train_labels_df=self.nn_train_y,
@@ -233,7 +236,8 @@ class DataModel():
                                    epochs=epochs,
                                    sparsity=sparsity,
                                    learning_rate=learning_rate,
-                                   loss=loss)
+                                   loss=loss,
+                                   verbose=verbose)
             self.adage_fit.initialize_model()
             self.adage_fit.train_adage(train_df=self.nn_train_df,
                                        test_df=self.nn_test_df)
