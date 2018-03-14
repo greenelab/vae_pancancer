@@ -211,16 +211,18 @@ class DataModel():
                                         test_labels_df=self.nn_test_y)
             self.ctybalt_decoder_w = self.ctybalt_fit.get_decoder_weights()
 
-            # TODO - What are the cVAE weights doing
             features = ['cvae_{}'.format(x) for x in range(0, latent_dim)]
+            features_with_groups = features + ['group_{}'.format(x) for x in
+                                               range(latent_dim,
+                                                     latent_dim + label_dim)]
 
             w = pd.DataFrame(self.ctybalt_decoder_w[1][0])
             self.ctybalt_group_w = pd.DataFrame(w.iloc[:, -label_dim:])
 
             gene_range = range(0, w.shape[1] - label_dim)
-            self.ctybalt_weights = pd.DataFrame(w.iloc[:, gene_range],
-                                                columns=self.df.columns,
-                                                index=features)
+            self.ctybalt_weights = pd.DataFrame(w.iloc[:, gene_range])
+            self.ctybalt_weights.columns = self.df.columns
+            self.ctybalt_weights.index = features_with_groups
 
             self.ctybalt_df = self.ctybalt_fit.compress([self.df,
                                                          self.other_onehot])
@@ -419,11 +421,16 @@ class DataModel():
         recon_lsa = self.reconstruct_group(lsa_result, algorithm)
         avg_dist = self.get_average_distance(recon_lsa, real_df)
 
-        return mean_rank_min, min_rank_avg, relative_min_diff, avg_dist
+        out_results = mean_rank_min.T
+        out_results.index = algorithm.split()
+        out_results = out_results.assign(minimum_rank_avg=min_rank_avg)
+        out_results = out_results.assign(min_node_zscore=relative_min_diff)
+        out_results = out_results.assign(avg_recon_dist=avg_dist)
+
+        return out_results
 
     def subtraction_eval(self, num_components, noise_column, group_list,
-                         add_groups, expect_node, real_df, cvae=False):
-        return_rank_dict = {}
+                         add_groups, expect_node, real_df):
         tybalt_results = self._wrap_sub_eval(weight_df=self.tybalt_weights,
                                              compress_df=self.tybalt_df,
                                              num_components=num_components,
@@ -433,6 +440,7 @@ class DataModel():
                                              node=expect_node,
                                              real_df=real_df,
                                              algorithm='tybalt')
+
         adage_results = self._wrap_sub_eval(weight_df=self.adage_weights,
                                             compress_df=self.adage_df,
                                             num_components=num_components,
@@ -442,6 +450,7 @@ class DataModel():
                                             node=expect_node,
                                             real_df=real_df,
                                             algorithm='adage')
+
         pca_results = self._wrap_sub_eval(weight_df=self.pca_weights,
                                           compress_df=self.pca_df,
                                           num_components=num_components,
@@ -451,6 +460,7 @@ class DataModel():
                                           node=expect_node,
                                           real_df=real_df,
                                           algorithm='pca')
+
         ica_results = self._wrap_sub_eval(weight_df=self.ica_weights,
                                           compress_df=self.ica_df,
                                           num_components=num_components,
@@ -460,6 +470,7 @@ class DataModel():
                                           node=expect_node,
                                           real_df=real_df,
                                           algorithm='ica')
+
         nmf_results = self._wrap_sub_eval(weight_df=self.nmf_weights,
                                           compress_df=self.nmf_df,
                                           num_components=num_components,
@@ -469,9 +480,6 @@ class DataModel():
                                           node=expect_node,
                                           real_df=real_df,
                                           algorithm='nmf')
-        return_rank_dict['tybalt'] = tybalt_results
-        return_rank_dict['adage'] = adage_results
-        return_rank_dict['pca'] = pca_results
-        return_rank_dict['ica'] = ica_results
-        return_rank_dict['nmf'] = nmf_results
-        return return_rank_dict
+
+        return pd.concat([tybalt_results, adage_results, pca_results,
+                          ica_results, nmf_results])
