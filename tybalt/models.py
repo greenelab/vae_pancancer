@@ -266,6 +266,7 @@ class cTybalt(VAE):
                                         validation_data=val_input,
                                         callbacks=[WarmUpCallback(self.beta,
                                                                   self.kappa)])
+        self.history_df = pd.DataFrame(self.hist.history)
 
 
 class Adage(BaseModel):
@@ -322,7 +323,7 @@ class Adage(BaseModel):
         self._compile_adage()
         self._connect_layers()
 
-    def train_adage(self, train_df, test_df):
+    def train_adage(self, train_df, test_df, adage_comparable_loss=False):
         self.hist = self.full_model.fit(np.array(train_df), np.array(train_df),
                                         shuffle=True,
                                         epochs=self.epochs,
@@ -330,6 +331,12 @@ class Adage(BaseModel):
                                         batch_size=self.batch_size,
                                         validation_data=(np.array(test_df),
                                                          np.array(test_df)))
+        self.history_df = pd.DataFrame(self.hist.history)
+
+        # ADAGE loss is a mean over all features - to make this value more
+        # comparable to the VAE reconstruciton loss, multiply by num genes
+        if adage_comparable_loss:
+            self.history_df = self.history_df * self.original_dim
 
     def compress(self, df):
         # Encode rnaseq into the hidden/latent representation - and save output
