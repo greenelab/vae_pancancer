@@ -52,3 +52,22 @@ class WarmUpCallback(Callback):
         """
         if K.get_value(self.beta) <= 1:
             K.set_value(self.beta, K.get_value(self.beta) + self.kappa)
+
+class LossCallback(Callback):
+    def __init__(self, training_data, encoder, decoder):
+        self.training_data = training_data
+        self.encoder_cbk = encoder
+        self.decoder_cbk = decoder
+
+    def on_train_begin(self, logs={}):
+        self.xent_loss = []
+        self.kl_loss = []
+        
+    def on_epoch_end(self, epoch, logs={}):
+        recon = self.decoder_cbk.predict(
+            self.encoder_cbk.predict(self.training_data))
+        xent_loss = approx_keras_recon(x=recon, z=self.training_data)
+        full_loss = logs.get('loss')
+        self.xent_loss.append(xent_loss)
+        self.kl_loss.append(full_loss - xent_loss)
+        return
