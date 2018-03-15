@@ -18,8 +18,8 @@ Usage: Run on the command line with required arguments:
         --seeds             How many times to compress input data
         --transform         How to transform the input data file
         --num_components    How many components to compress input down to
-        --epochs            How many times to loop through input data to train
-                            neural networks
+        --vae_epochs        How many times to loop input data to train VAE
+        --adage_epochs      How many times to loop input data to train ADAGE
         --batch_size        How many samples to include after each weight
                             update in neural network training
         --vae_learning_rate         Variational Autoencoder learing rate
@@ -46,21 +46,23 @@ parser.add_argument('-f', '--out_file', help='where to save output results')
 parser.add_argument('-s', '--seeds', default=5,
                     help='number of different seeds to run on current data')
 parser.add_argument('-t', '--transform', default='zeroone',
-                    help='how to transform the data')
+                    help='how to transform the data',
+                    choices=['zeroone', 'zscore'])
 parser.add_argument('-c', '--num_components', default=6,
                     help='length of the latent space features')
-parser.add_argument('-ve', '--vae_epochs', default=50,
+parser.add_argument('-ve', '--vae_epochs', default=60,
                     help='how many epochs for VAE models')
-parser.add_argument('-ae', '--adage_epochs', default=100,
+parser.add_argument('-ae', '--adage_epochs', default=60,
                     help='how many epochs for ADAGE models')
-parser.add_argument('-b', '--batch_size', default=25,
+parser.add_argument('-b', '--batch_size', default=30,
                     help='How many samples to use to update weights')
-parser.add_argument('-r', '--vae_learning_rate', default=0.001,
+parser.add_argument('-r', '--vae_learning_rate', default=0.0005,
                     help='learning rate for the VAE models')
-parser.add_argument('-a', '--adage_learning_rate', default=1.2,
+parser.add_argument('-a', '--adage_learning_rate', default=0.0005,
                     help='learning Rate for the ADAGE models')
 parser.add_argument('-l', '--loss', default='mse',
-                    help='What loss function to optimize for the NN models')
+                    help='What loss function to optimize for the NN models',
+                    choices=['mse', 'binary_crossentropy'])
 parser.add_argument('-v', '--verbose', action='store_true',
                     help='output training history for NN models')
 args = parser.parse_args()
@@ -72,7 +74,7 @@ sample_size = int(args.sample_size)
 num_genes = int(args.num_genes)
 out_file = args.out_file
 num_seeds = int(args.seeds)
-how_transform = args.transform
+how_transform = args.transform  # Note that NMF will not work with `zscore`
 n_components = int(args.num_components)
 vae_epochs = int(args.vae_epochs)
 adage_epochs = int(args.adage_epochs)
