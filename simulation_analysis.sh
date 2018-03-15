@@ -5,7 +5,7 @@
 SEEDS=20
 NOISES=( 0 0.1 0.5 1 3 )
 SAMPLE_SIZES=( 500 1000 2000 4000 8000 )
-GENE_SIZES=( 500 )
+GENE_SIZES=( 500 1000 )
 DATA_PREFIX='data/simulation/sim_data_samplesize_'
 OUT_PREFIX='results/simulation/output_sim_data_samplesize_'
 
