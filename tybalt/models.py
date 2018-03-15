@@ -17,6 +17,7 @@ from keras.models import Model, Sequential
 from keras.regularizers import l1
 
 from tybalt.utils.vae_utils import VariationalLayer, WarmUpCallback
+from tybalt.utils.vae_utils import LossCallback
 from tybalt.utils.base import VAE, BaseModel
 
 
@@ -107,7 +108,13 @@ class Tybalt(VAE):
         _x_decoded_mean = self.decoder_model(decoder_input)
         self.decoder = Model(decoder_input, _x_decoded_mean)
 
-    def train_vae(self, train_df, test_df):
+    def train_vae(self, train_df, test_df, separate_loss=False):
+
+        cbks = [WarmUpCallback(self.beta, self.kappa)]
+        if separate_loss:
+            loss_callback = LossCallback(training_data=np.array(train_df))
+            cbks += [loss_callback]
+
         self.hist = self.full_model.fit(np.array(train_df),
                                         shuffle=True,
                                         epochs=self.epochs,
@@ -115,8 +122,7 @@ class Tybalt(VAE):
                                         verbose=self.verbose,
                                         validation_data=(np.array(test_df),
                                                          None),
-                                        callbacks=[WarmUpCallback(self.beta,
-                                                                  self.kappa)])
+                                        callbacks=cbks)
 
 
 class cTybalt(VAE):
