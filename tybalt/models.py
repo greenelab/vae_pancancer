@@ -112,7 +112,10 @@ class Tybalt(VAE):
 
         cbks = [WarmUpCallback(self.beta, self.kappa)]
         if separate_loss:
-            loss_callback = LossCallback(training_data=np.array(train_df))
+            loss_callback = LossCallback(training_data=np.array(train_df),
+                                         encoder_cbk=self.encoder,
+                                         decoder_cbk=self.decoder,
+                                         original_dim=self.original_dim)
             cbks += [loss_callback]
 
         self.hist = self.full_model.fit(np.array(train_df),
