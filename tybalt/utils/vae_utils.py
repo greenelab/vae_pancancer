@@ -74,11 +74,11 @@ class WarmUpCallback(Callback):
 
 
 class LossCallback(Callback):
-    def __init__(self, training_data, original_dim, encoder, decoder):
+    def __init__(self, training_data, original_dim, encoder_cbk, decoder_cbk):
         self.training_data = training_data
         self.original_dim = original_dim
-        self.encoder_cbk = encoder
-        self.decoder_cbk = decoder
+        self.encoder_cbk = encoder_cbk
+        self.decoder_cbk = decoder_cbk
 
     def on_train_begin(self, logs={}):
         self.xent_loss = []
@@ -89,7 +89,7 @@ class LossCallback(Callback):
             self.encoder_cbk.predict(self.training_data))
         xent_loss = approx_keras_binary_cross_entropy(x=recon,
                                                       z=self.training_data,
-                                                      p=self.orginal_dim)
+                                                      p=self.original_dim)
         full_loss = logs.get('loss')
         self.xent_loss.append(xent_loss)
         self.kl_loss.append(full_loss - xent_loss)
