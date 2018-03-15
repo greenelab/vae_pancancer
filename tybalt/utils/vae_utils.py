@@ -1,3 +1,4 @@
+import numpy as np
 from keras import backend as K
 from keras.callbacks import Callback
 from keras.layers import Layer
@@ -19,7 +20,7 @@ def approx_keras_binary_cross_entropy(x, z, p):
     """
     x = np.log(x / (1 - x))
     return np.mean(p * np.mean(- x * z + np.log(1 + np.exp(x)),
-                                          axis=-1))
+                   axis=-1))
 
 
 class VariationalLayer(Layer):
