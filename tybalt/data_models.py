@@ -142,6 +142,7 @@ class DataModel():
         verbose = kwargs.pop('verbose', True)
         tybalt_separate_loss = kwargs.pop('separate_loss', False)
         adage_comp_loss = kwargs.pop('multiply_adage_loss', False)
+        adage_optimizer = kwargs.pop('adage_optimizer', 'adam')
 
         # Extra processing for conditional vae
         if hasattr(self, 'other_df') and model == 'ctybalt':
@@ -244,7 +245,8 @@ class DataModel():
                                    sparsity=sparsity,
                                    learning_rate=learning_rate,
                                    loss=loss,
-                                   verbose=verbose)
+                                   verbose=verbose,
+                                   optimizer=adage_optimizer)
             self.adage_fit.initialize_model()
             self.adage_fit.train_adage(train_df=self.nn_train_df,
                                        test_df=self.nn_test_df,
