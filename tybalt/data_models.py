@@ -141,6 +141,7 @@ class DataModel():
         validation_ratio = kwargs.pop('validation_ratio', 0.1)
         verbose = kwargs.pop('verbose', True)
         tybalt_separate_loss = kwargs.pop('separate_loss', False)
+        adage_comp_loss = kwargs.pop('multiply_adage_loss', False)
 
         # Extra processing for conditional vae
         if hasattr(self, 'other_df') and model == 'ctybalt':
@@ -246,7 +247,8 @@ class DataModel():
                                    verbose=verbose)
             self.adage_fit.initialize_model()
             self.adage_fit.train_adage(train_df=self.nn_train_df,
-                                       test_df=self.nn_test_df)
+                                       test_df=self.nn_test_df,
+                                       adage_comparable_loss=adage_comp_loss)
             self.adage_decoder_w = self.adage_fit.get_decoder_weights()
 
             features = ['dae_{}'.format(x) for x in range(0, latent_dim)]
