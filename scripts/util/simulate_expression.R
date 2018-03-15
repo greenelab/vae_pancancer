@@ -68,10 +68,10 @@ simulateExpression <- function(n, num_sets, num_genes, num_modules,
 # Vary sample size and amount of background noise
 ns <- c(250, 500, 1000, 2000, 4000)
 background_noises <- c(0, 0.1, 0.5, 1, 3)
+genes <- c(500, 1000)
 
 # Other constants
 num_sets <- 4
-num_genes <- 1000
 num_modules <- 5
 
 min_cor <- 0.4
@@ -88,21 +88,24 @@ leave_out_other <- c(rep(FALSE, num_modules / 2), TRUE,
 
 for (n in ns) {
   for (noise in background_noises) {
-    out_file <- paste0("sim_data_samplesize_", n * 2, "_noise_", noise, ".tsv")
-    out_file <- file.path("data", "simulation", out_file)
-    x <- simulateExpression(n = n,
-                            num_sets = num_sets,
-                            num_genes = num_genes,
-                            num_modules = num_modules,
-                            background_noise = noise,
-                            min_cor = min_cor,
-                            max_cor = max_cor,
-                            sample_set_A = sample_set_A,
-                            sample_set_B = sample_set_B,
-                            mod_prop = mod_prop,
-                            leave_out = leave_out,
-                            leave_out_other = leave_out_other)
-    
-    readr::write_tsv(x, out_file)
+    for (g in genes) {
+      out_file <- paste0("sim_data_samplesize_", n * 2, "_noise_", noise,
+                         "_genes_", g, ".tsv")
+      out_file <- file.path("data", "simulation", out_file)
+      x <- simulateExpression(n = n,
+                              num_genes = g,
+                              background_noise = noise,
+                              num_sets = num_sets,
+                              num_modules = num_modules,
+                              min_cor = min_cor,
+                              max_cor = max_cor,
+                              sample_set_A = sample_set_A,
+                              sample_set_B = sample_set_B,
+                              mod_prop = mod_prop,
+                              leave_out = leave_out,
+                              leave_out_other = leave_out_other)
+      
+      readr::write_tsv(x, out_file)
+    }
   }
 }
