@@ -276,8 +276,8 @@ class Adage(BaseModel):
     Usage: from tybalt.models import Adage
     """
     def __init__(self, original_dim, latent_dim, noise=0.05, batch_size=50,
-                 epochs=100, sparsity=0, learning_rate=1.1,
-                 loss='mse', verbose=True):
+                 epochs=100, sparsity=0, learning_rate=0.0005,
+                 loss='mse', optimizer='adam', verbose=True):
         BaseModel.__init__(self)
         self.model_name = 'ADAGE'
         self.original_dim = original_dim
@@ -288,6 +288,7 @@ class Adage(BaseModel):
         self.sparsity = sparsity
         self.learning_rate = learning_rate
         self.loss = loss
+        self.optimizer = optimizer
         self.verbose = verbose
 
     def _build_graph(self):
@@ -304,8 +305,11 @@ class Adage(BaseModel):
 
     def _compile_adage(self):
         # Compile the autoencoder to prepare for training
-        adadelta = optimizers.Adadelta(lr=self.learning_rate)
-        self.full_model.compile(optimizer=adadelta, loss=self.loss)
+        if self.optimizer == 'adadelta':
+            optim = optimizers.Adadelta(lr=self.learning_rate)
+        elif self.optimizer == 'adam':
+            optim = optimizers.Adam(lr=self.learning_rate)
+        self.full_model.compile(optimizer=optim, loss=self.loss)
 
     def _connect_layers(self):
         # Separate out the encoder and decoder model
