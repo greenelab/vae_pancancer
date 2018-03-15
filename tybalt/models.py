@@ -112,11 +112,11 @@ class Tybalt(VAE):
 
         cbks = [WarmUpCallback(self.beta, self.kappa)]
         if separate_loss:
-            loss_callback = LossCallback(training_data=np.array(train_df),
-                                         encoder_cbk=self.encoder,
-                                         decoder_cbk=self.decoder,
-                                         original_dim=self.original_dim)
-            cbks += [loss_callback]
+            tybalt_loss_cbk = LossCallback(training_data=np.array(train_df),
+                                           encoder_cbk=self.encoder,
+                                           decoder_cbk=self.decoder,
+                                           original_dim=self.original_dim)
+            cbks += [tybalt_loss_cbk]
 
         self.hist = self.full_model.fit(np.array(train_df),
                                         shuffle=True,
@@ -126,6 +126,13 @@ class Tybalt(VAE):
                                         validation_data=(np.array(test_df),
                                                          None),
                                         callbacks=cbks)
+        self.history_df = pd.DataFrame(self.hist.history)
+
+        if separate_loss:
+            self.history_df = self.history_df.assign(
+                                recon=tybalt_loss_cbk.xent_loss)
+            self.history_df = self.history_df.assign(
+                                kl=tybalt_loss_cbk.kl_loss)
 
 
 class cTybalt(VAE):
