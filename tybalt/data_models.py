@@ -57,7 +57,7 @@ class DataModel():
         if filename is None:
             self.df = df
         else:
-            self.df = pd.read_table(self.filename)
+            self.df = pd.read_table(self.filename, index_col=0)
 
         if select_columns:
             subset_df = self.df.iloc[:, select_columns]
@@ -140,6 +140,7 @@ class DataModel():
         loss = kwargs.pop('loss', 'binary_crossentropy')
         validation_ratio = kwargs.pop('validation_ratio', 0.1)
         verbose = kwargs.pop('verbose', True)
+        tybalt_separate_loss = kwargs.pop('separate_loss', False)
 
         # Extra processing for conditional vae
         if hasattr(self, 'other_df') and model == 'ctybalt':
@@ -178,7 +179,8 @@ class DataModel():
                                      verbose=verbose)
             self.tybalt_fit.initialize_model()
             self.tybalt_fit.train_vae(train_df=self.nn_train_df,
-                                      test_df=self.nn_test_df)
+                                      test_df=self.nn_test_df,
+                                      separate_loss=tybalt_separate_loss)
             self.tybalt_decoder_w = self.tybalt_fit.get_decoder_weights()
 
             features = ['vae_{}'.format(x) for x in range(0, latent_dim)]
