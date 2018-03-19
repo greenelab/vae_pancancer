@@ -101,7 +101,9 @@ class Tybalt(VAE):
                                 loss_weights=[self.beta])
 
     def _connect_layers(self):
-        # Make connections between layers to build separate encoder and decoder
+        """
+        Make connections between layers to build separate encoder and decoder
+        """
         self.encoder = Model(self.rnaseq_input, self.z_mean_encoded)
 
         decoder_input = Input(shape=(self.latent_dim, ))
@@ -109,7 +111,16 @@ class Tybalt(VAE):
         self.decoder = Model(decoder_input, _x_decoded_mean)
 
     def train_vae(self, train_df, test_df, separate_loss=False):
+        """
+        Method to train model.
 
+        `separate_loss` instantiates a custom Keras callback that tracks the
+        separate contribution of reconstruction and KL divergence loss. Because
+        VAEs try to minimize both, it may be informative to track each across
+        training separately. The callback processes the training data through
+        the current encoder and decoder and therefore requires additional time
+        - which is why this is not done by default.
+        """
         cbks = [WarmUpCallback(self.beta, self.kappa)]
         if separate_loss:
             tybalt_loss_cbk = LossCallback(training_data=np.array(train_df),
