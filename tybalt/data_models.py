@@ -53,6 +53,18 @@ class DataModel():
     """
     def __init__(self, filename=None, df=False, select_columns=False,
                  gene_modules=None):
+        """
+        DataModel can be initialized with either a filename or a pandas
+        dataframe and processes gene modules and sample labels if provided.
+
+        Arguments:
+
+        filename - if provided, load gene expression data into object
+        df - dataframe of preloaded gene expression data
+        select_columns - the columns of the dataframe to use
+        gene_modules - a list of gene module assignments for each gene (for use
+        with the simulated data or when ground truth gene modules are known)
+        """
         self.filename = filename
         if filename is None:
             self.df = df
