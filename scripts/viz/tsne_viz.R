@@ -6,13 +6,13 @@
 library(dplyr)
 library(ggplot2)
 
-plot_tsne <- function(tsne_df) {
-  # Function to output tsne visualizations colored by cancer type for the given
+plot_tsne <- function(tsne_df, color_df) {
+  # Function to output tsne visualizations colored by cancer-type for the given
   # input data (compressed by either Tybalt or ADAGE or raw RNAseq data)
   p <- ggplot(tsne_df, aes(x = `1`, y = `2`, color = acronym)) +
     geom_point(size = 0.001) +
-    scale_colour_manual(limits = tcga_colors$`Study Abbreviation`,
-                        values = tcga_colors$`Hex Colors`,
+    scale_colour_manual(limits = color_df$`Study Abbreviation`,
+                        values = color_df$`Hex Colors`,
                         na.value = "black",
                         breaks = palette_order) +
     theme_classic() +
@@ -58,16 +58,16 @@ palette_order <- c("BRCA", "PRAD", "TGCT", "KICH", "KIRP", "KIRC", "BLCA",
 # Plot and save VAE tsne
 vae_tsne_pdf_out_file <- file.path("figures", "tsne_vae.pdf")
 vae_tsne_png_out_file <- file.path("figures", "tsne_vae.png")
-p <- plot_tsne(tsne_vae_df)
+p <- plot_tsne(tsne_vae_df, tcga_colors)
 ggsave(vae_tsne_pdf_out_file, plot = p, width = 6, height = 4.5)
 ggsave(vae_tsne_png_out_file, plot = p, width = 4, height = 3)  # PNG for repo
 
 # Plot and save ADAGE tsne
 adage_tsne_pdf_out_file <- file.path("figures", "tsne_adage.pdf")
-p <- plot_tsne(tsne_adage_df)
+p <- plot_tsne(tsne_adage_df, tcga_colors)
 ggsave(adage_tsne_pdf_out_file, plot = p, width = 6, height = 4.5)
 
 # Plot and save RNAseq tsne
 rnaseq_tsne_out_file <- file.path("figures", "tsne_rnaseq.pdf")
-p <- plot_tsne(tsne_rnaseq_df)
+p <- plot_tsne(tsne_rnaseq_df, tcga_colors)
 ggsave(rnaseq_tsne_out_file, plot = p, width = 6, height = 4.5)
