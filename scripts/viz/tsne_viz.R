@@ -5,6 +5,7 @@
 
 library(dplyr)
 library(ggplot2)
+library(readr)
 
 plot_tsne <- function(tsne_df, color_df) {
   # Function to output tsne visualizations colored by cancer-type for the given
