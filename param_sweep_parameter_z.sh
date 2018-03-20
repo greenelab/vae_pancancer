@@ -5,6 +5,10 @@
 # analysis on the latent space dimensionality, and we want to be sure that
 # the comparisons being made are not a result of poor input hyperparameters
 
+# The parameters were selected to represent a range of hyperparameters that
+# we have previously observed to impact training. Learning rates appear to
+# have the largest impact on performance, so we include a larger search space.
+
 # Note this was run at the PMACS cluster at University of Pennsvylvania on a
 # cluster of 8 NVIDIA GEFORCE GTX Ti GPUs.
 
