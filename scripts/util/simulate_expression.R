@@ -182,6 +182,7 @@ ggsave(eigen_sample_file, sample_corr, height = 5, width = 6)
 simulated_example_file <- file.path("figures", "example_simulated_data.pdf")
 sampled_data <- example_sim[[1]][2:nrow(example_sim[[1]]),
                                  1:ncol(example_sim[[1]]) - 1]
+
 pdf(simulated_example_file)
 heatmap.2(as.matrix(sampled_data), trace = "none",
           RowSideColors =  c(rep('blue', 250),
@@ -191,7 +192,7 @@ heatmap.2(as.matrix(sampled_data), trace = "none",
           labRow = "", labCol = "", scale = 'none',
           hclustfun = function(x) hclust(x, method = 'average'),
           distfun = function(x) dist(x, method = 'euclidean'),
-          dendrogram = "none", Rowv = TRUE, Colv = FALSE)
+          dendrogram = "row", Rowv = TRUE, Colv = FALSE)
 dev.off()
 
 simulated_example_png <- file.path("figures", "example_simulated_data.png")
@@ -204,5 +205,5 @@ heatmap.2(as.matrix(sampled_data), trace = "none",
           labRow = "", labCol = "", scale = 'none',
           hclustfun = function(x) hclust(x, method = 'average'),
           distfun = function(x) dist(x, method = 'euclidean'),
-          dendrogram = "none", Rowv = TRUE, Colv = FALSE)
+          dendrogram = "row", Rowv = TRUE, Colv = FALSE)
 dev.off()
