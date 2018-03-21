@@ -404,6 +404,9 @@ class DataModel():
             return self.ica_fit.inverse_transform(lsa_result)
         elif algorithm == 'nmf':
             return self.nmf_fit.inverse_transform(lsa_result)
+        else:
+            raise ValueError('algorithm must be one of: "pca", "ica", "nmf",' +
+                             ' "adage", "tybalt", or "ctybalt"')
 
     def get_average_distance(self, transform_df, real_df):
         """
