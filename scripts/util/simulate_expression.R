@@ -27,8 +27,8 @@ simulateExpression <- function(n, num_sets, num_genes, num_modules,
   # num_genes - The number of genes to simulate
   # num_modules - The number of distinct simulated "groups" of genes
   # background_noise - N(0, sd = background_noise) added to all values
-  # min_cor - The minimum correlation of genes in modules to core module
-  # max_cor - The maximum correlation of genes in modules to core module
+  # min_cor - The minimum correlation of genes in modules to core eigengene
+  # max_cor - The maximum correlation of genes in modules to core eigengene
   # sample_set_A - character vector of sample group A centroids
   # sample_set_B - character vector of sample group B centroids
   # mod_prop - character vector (must sum to 1) of gene module proportions
