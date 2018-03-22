@@ -196,7 +196,7 @@ heatmap.2(as.matrix(sampled_data), trace = "none",
 dev.off()
 
 simulated_example_png <- file.path("figures", "example_simulated_data.png")
-png(simulated_example_png)
+png(simulated_example_png, height = 600, width = 800)
 heatmap.2(as.matrix(sampled_data), trace = "none",
           RowSideColors =  c(rep('blue', 250),
                              rep('red', 250),
