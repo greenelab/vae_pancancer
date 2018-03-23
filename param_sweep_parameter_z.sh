@@ -14,13 +14,13 @@
 
 PARAM_FILE_PREFIX='config/z_parameter_sweep_'
 PMACS_FILE='config/pmacs_config.tsv'
-PYTHON_PATH='~/.conda/envs/tybalt-gpu/bin/python'
-ALGORITHMS=( 'tybalt', 'adage' )
+PYTHON_PATH='python'
+ALGORITHMS=( 'tybalt' 'adage' )
 
 for alg in "${ALGORITHMS[@]}"
 do
     PARAM_FILE=$PARAM_FILE_PREFIX$alg'.tsv'
-    ~/.conda/envs/tybalt-gpu/bin/python scripts/num_components_paramsweep.py \
+    python scripts/num_components_paramsweep.py \
           --parameter_file $PARAM_FILE \
           --config_file $PMACS_FILE \
           --algorithm $alg \
