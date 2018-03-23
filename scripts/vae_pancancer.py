@@ -73,7 +73,6 @@ rnaseq_df = pd.read_table(rnaseq_file, index_col=0)
 
 # Set architecture dimensions
 original_dim = rnaseq_df.shape[1]
-latent_dim = 100
 epsilon_std = 1.0
 beta = K.variable(0)
 if depth == 2:
