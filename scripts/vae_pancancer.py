@@ -13,6 +13,7 @@ Usage:
                                         --kappa
                                         --depth
                                         --output_filename
+                                        --num_components
 
     Typically, arguments to this script are compiled automatically by:
 
@@ -52,6 +53,8 @@ parser.add_argument('-c', '--first_layer',
                     default=100)
 parser.add_argument('-f', '--output_filename',
                     help='The name of the file to store results')
+parser.add_argument('-n', '--num_components', default=100,
+                    help='The latent space dimensionality to test')
 args = parser.parse_args()
 
 # Set hyper parameters
@@ -62,6 +65,7 @@ kappa = float(args.kappa)
 depth = int(args.depth)
 first_layer = int(args.first_layer)
 output_filename = args.output_filename
+latent_dim = args.num_components
 
 # Load Data
 rnaseq_file = os.path.join('data', 'pancan_scaled_zeroone_rnaseq.tsv.gz')
@@ -69,7 +73,6 @@ rnaseq_df = pd.read_table(rnaseq_file, index_col=0)
 
 # Set architecture dimensions
 original_dim = rnaseq_df.shape[1]
-latent_dim = 100
 epsilon_std = 1.0
 beta = K.variable(0)
 if depth == 2:
@@ -222,6 +225,7 @@ hist = vae.fit(np.array(rnaseq_train_df),
 
 # Save training performance
 history_df = pd.DataFrame(hist.history)
+history_df = history_df.assign(num_components=latent_dim)
 history_df = history_df.assign(learning_rate=learning_rate)
 history_df = history_df.assign(batch_size=batch_size)
 history_df = history_df.assign(epochs=epochs)
