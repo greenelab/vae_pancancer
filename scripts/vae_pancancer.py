@@ -224,8 +224,7 @@ hist = vae.fit(np.array(rnaseq_train_df),
                shuffle=True,
                epochs=epochs,
                batch_size=batch_size,
-               validation_data=(np.array(rnaseq_test_df),
-                                np.array(rnaseq_test_df)),
+               validation_data=(np.array(rnaseq_test_df), None),
                callbacks=[WarmUpCallback(beta, kappa)])
 
 # Save training performance
