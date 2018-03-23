@@ -123,11 +123,9 @@ elif algorithm == 'adage':
                             final_command = [python_path, script] + params
                             all_commands.append(final_command)
 
-# Submit the jobs to PMACS
+# Submit commands
 for command in all_commands:
     b = bsub_help(command=command,
-                  queue=queue,
-                  num_gpus=num_gpus,
-                  num_gpus_shared=num_gpus_shared,
-                  walltime=walltime)
+                  local=True,
+                  shell=False)
     b.submit_command()
