@@ -51,8 +51,10 @@ parser.add_argument('-n', '--noise',
                     help='How much Gaussian noise to add during training')
 parser.add_argument('-f', '--output_filename',
                     help='The name of the file to store results')
-parser.add_argument('-n', '--num_components', default=100,
+parser.add_argument('-c', '--num_components', default=100,
                     help='The latent space dimensionality to test')
+parser.add_argument('-o', '--optimizer', default='adam',
+                    help='optimizer to use', choices=['adam', 'adadelta'])
 args = parser.parse_args()
 
 # Set hyper parameters
@@ -63,6 +65,7 @@ sparsity = float(args.sparsity)
 noise = float(args.noise)
 output_filename = args.output_filename
 latent_dim = int(args.num_components)
+use_optimizer = args.optimizer
 
 # Random seed
 seed = int(np.random.randint(low=0, high=10000, size=1))
@@ -89,8 +92,12 @@ decoded_rnaseq = Dense(original_dim, activation='sigmoid')(activation)
 
 autoencoder = Model(input_rnaseq, decoded_rnaseq)
 
-adadelta = optimizers.Adadelta(lr=learning_rate)
-autoencoder.compile(optimizer=adadelta, loss='mse')
+if use_optimizer == 'adadelta':
+    optim = optimizers.Adadelta(lr=learning_rate)
+elif use_optimizer == 'adam':
+    optim = optimizers.Adam(lr=learning_rate)
+
+autoencoder.compile(optimizer=optim, loss='mse')
 
 hist = autoencoder.fit(np.array(rnaseq_train_df), np.array(rnaseq_train_df),
                        shuffle=True,
