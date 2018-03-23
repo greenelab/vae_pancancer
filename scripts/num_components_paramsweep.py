@@ -64,6 +64,9 @@ python_path = args.python_path
 param_folder = args.param_folder
 script = args.script
 
+if algorithm == 'adage':
+    script = 'scripts/adage_pancancer.py'
+
 if not os.path.exists(param_folder):
     os.makedirs(param_folder)
 
