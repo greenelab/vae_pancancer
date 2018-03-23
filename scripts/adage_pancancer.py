@@ -62,7 +62,7 @@ epochs = int(args.epochs)
 sparsity = float(args.sparsity)
 noise = float(args.noise)
 output_filename = args.output_filename
-latent_dim = args.num_components
+latent_dim = int(args.num_components)
 
 # Random seed
 seed = int(np.random.randint(low=0, high=10000, size=1))
