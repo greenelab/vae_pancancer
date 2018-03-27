@@ -2,6 +2,36 @@
 Gregory Way 2018
 scripts/num_components_param_sweep.py
 
+The script uses two configuration files: 1) parameter and 2) config files.
+
+1) The parameter file (required) is a tab separated file with a header:
+
+header = ["parameter", "sweep_values"]
+
+Where different values are given for specific hyperparameters. The different
+values are separated by commas. The possible hyperparameters currently include:
+
+num_components - the dimensionality of the compressed latent space
+learning_rates - the step size for each gradient update
+batch_sizes - the number of samples to include in each weight update iteration
+epochs - how many times to cycle through all batches of data
+kappas - the amount of "warmup" applied to VAE models
+sparsities - a weight regularization parameter enforcing zero weights in ADAGE
+noises - the proportion of dropout weights in ADAGE models
+
+2) The tab sep config file has parameters for training on PMACS with a header:
+
+header = ["variable", "assign"]
+
+The values include:
+
+queue - the queue that will schedule and run jobs
+num_gpus - how many GPUs to request (if "gpu" queue requested)
+num_gpus_shared - how many of these GPUs run concurrent jobs
+walltime - how long to request for each job to run
+
+NOTE: Either a PMACS configuration file or a `--local` flag must be provided.
+
 Usage: Run in command line:
 
 python scripts/num_components_param_sweep.py
@@ -9,16 +39,17 @@ python scripts/num_components_param_sweep.py
      with required command arguments:
 
        --parameter_file     filepath pointing to tab separated parameters
-       --config_file        filepath pointing to PMACS configuration file
 
      and optional arguments:
 
+       --config_file        filepath pointing to PMACS configuration file
        --algorithm          a string indicating which algorithm to sweep over
                               default: 'tybalt' (i.e. variational autoencoder)
        --python_path        absolute path of PMACS python in select environment
                               default: '~/.conda/envs/tybalt-gpu/bin/python'
        --param_folder       filepath of where to save the results
                               default: 'param_sweep'
+       --local              if provided, sweep will be run locally instead
 
 Output:
 Submit a job to the PMACS cluster training a distinct VAE with a different
@@ -33,7 +64,7 @@ from bsub_helper import bsub_help
 
 def get_param(param):
     try:
-        sweep = parameter_df.loc[param, 'sweep']
+        sweep = parameter_df.loc[param, 'sweep_values']
     except:
         sweep = ''
         print("Warning! No parameter detected of name: {}".format(param))
@@ -42,7 +73,7 @@ def get_param(param):
 parser = argparse.ArgumentParser()
 parser.add_argument('-p', '--parameter_file',
                     help='location of tab separated parameter file to sweep')
-parser.add_argument('-c', '--config_file',
+parser.add_argument('-c', '--config_file', default='config/pmacs_config.tsv',
                     help='location of the configuration file for PMACS')
 parser.add_argument('-a', '--algorithm',
                     help='which algorithm to sweep hyperparameters over')
@@ -55,6 +86,8 @@ parser.add_argument('-d', '--param_folder',
 parser.add_argument('-t', '--script',
                     help='path the script to run the parameter sweep over',
                     default='scripts/vae_pancancer.py')
+parser.add_argument('-l', '--local', action='store_true',
+                    help='decision to run models locally instead of on PMACS')
 args = parser.parse_args()
 
 parameter_file = args.parameter_file
@@ -63,6 +96,13 @@ algorithm = args.algorithm
 python_path = args.python_path
 param_folder = args.param_folder
 script = args.script
+local = args.local
+
+# Required to update shell for `subprocess` module if running locally
+if local:
+    shell = False
+else:
+    shell = True
 
 if algorithm == 'adage':
     script = 'scripts/adage_pancancer.py'
@@ -129,6 +169,6 @@ elif algorithm == 'adage':
 # Submit commands
 for command in all_commands:
     b = bsub_help(command=command,
-                  local=True,
-                  shell=False)
+                  local=local,
+                  shell=shell)
     b.submit_command()
