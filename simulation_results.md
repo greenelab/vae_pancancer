@@ -27,6 +27,7 @@ Specially, we used these parameters:
 
 In each dataset, we simulated two different groups of samples.
 For example, when `n = 500`, the groups of samples include the following correlation structure.
+Note that this is _not_ the actual correlational structure, but is the underlying structure that is then sampled from stochastically given the gene modules described below.
 
 ![](figures/simulation/example_eigen_sample_plot.png?raw=true)
 
