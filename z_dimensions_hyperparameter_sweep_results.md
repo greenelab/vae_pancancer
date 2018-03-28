@@ -29,7 +29,7 @@ Here, we sweep over dimensions: `5`, `25`, `50`, `75`, `100`, and `125`.
 We sweep over the following parameter combinations for Tybalt and ADAGE models:
 
 | Variable | Tybalt Values | ADAGE Values |
-| :------: | :------------ | :----------- |
+| :------- | :------------ | :----------- |
 | Dimensionality | 5, 25, 50, 75, 100, 125 | 5, 25, 50, 75, 100, 125 |
 | Learning Rate | 0.0005, 0.001, 0.0015, 0.002, 0.0025 | 0.0005, 0.001, 0.0015, 0.002, 0.0025 |
 | Batch Size | 50, 100, 150 | 50, 100 |
