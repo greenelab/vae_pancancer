@@ -12,16 +12,17 @@ However, when the goal is to extract meaningful patterns in the data that may ha
 As the bottleneck relaxes, the ability to explain the patterns decreases and the possibility of false positives increases.
 
 In order to determine an optimal _range_ of compression dimensions, we propose the following.
-We will first sweep over various different dimensions and perform several evals (to be described later).
+We will first sweep over various different dimensions (results provided below) and perform several evals (to be described later).
+
 Before sweeping over a large number of different dimensions, we perform a hyperparameter sweep of select dimensions.
 In this sense, we want to minimize the effect of poor hyperparameter combinations across different dimensions contributing to performance differences.
 In other words, we want to isolate the effect of changing dimensionality on the observed patterns and solutions.
-Therefore, we perform a parameter sweep over several hyperparameters for both Tybalt and ADAGE models.
+Therefore, we perform a parameter sweep over several hyperparameters for both Tybalt and ADAGE models below.
 
 ### Number of dimensions
 
-Previously, we used latent space dimensionality of 100 ((Way and Greene 2018)[https://doi.org/10.1142/9789813235533_0008]).
-Here, we sweep over dimensions: 5, 25, 50, 75, 100, and 125.
+Previously, we used latent space dimensionality of `100` ([Way and Greene 2018](https://doi.org/10.1142/9789813235533_0008)).
+Here, we sweep over dimensions: `5`, `25`, `50`, `75`, `100`, and `125`.
 
 ## Parameter Sweep
 
@@ -33,9 +34,9 @@ We sweep over the following parameter combinations for Tybalt and ADAGE models:
 | Learning Rate | 0.0005, 0.001, 0.0015, 0.002, 0.0025 | 0.0005, 0.001, 0.0015, 0.002, 0.0025 |
 | Batch Size | 50, 100, 150 | 50, 100 |
 | Epochs | 50, 100 | 50, 100 |
-| Kappa | 0, 0.5, 1 | NA |
-| Sparsity | NA | 0, 0.000001, 0.001 |
-| Noise | NA | 0, 0.1, 0.5 |
+| Kappa | 0, 0.5, 1 | |
+| Sparsity | | 0, 0.000001, 0.001 |
+| Noise | | 0, 0.1, 0.5 |
 
 This resulted in the training of 540 Tybalt models and 1,080 ADAGE models.
 
@@ -57,18 +58,19 @@ Model performance (measured by observed validation loss) improved after increasi
 However, the performance began to level off after around 50 dimensions.
 All other hyperparameters had minor effects and varied with dimensionality, including `Kappa`.
 
-Selecting a constant learning rate, batch size, and epochs for all models, we stratify the entire training process across all tested dimensioonalities (**Figure 2**).
+Selecting a constant learning rate, batch size, and epochs for all models, we stratify the entire training process across all tested dimensionalities (**Figure 2**).
 
 ![](figures/param_sweep/z_param_tybalt/z_parameter_tybalt_training.png?raw=true)
 
 **Figure 2.** Validation loss across all training epochs for a fixed combination of hyperparameters.
 The `learning rate` was set to 0.0005, `batch size` 50, and `epochs` 100.
-We show performance differences across `kappa`.
+We also show performance differences across `kappa`.
 
 This analysis allowed us to select optimal models based on tested hyperparameters.
 For Tybalt, the optimal hyperparameters across dimensionality estimates are:
 
 | Dimensions | Kappa | Epochs | Batch Size | Learning Rate | End Loss |
+| :--------- | :---- | :----- | :--------- | :------------ | :------- |
 | 5 | 1 | 50 | 50 | 0.002 | 2805.4 |
 | 25 | 0 | 50 | 50 | 0.0015 | 2693.9 |
 | 50 | 0 | 100 | 100 | 0.002 | 2670.5 |
@@ -105,6 +107,7 @@ This analysis allowed us to select optimal models based on tested hyperparameter
 For ADAGE, the optimal hyperparameters across dimensionality estimates are:
 
 | Dimensions | Sparsity | Noise | Epochs | Batch Size | Learning Rate | End Loss |
+| :--------- | :------- | :---- | :----- | :--------- | :------------ | :------- |
 | 5 | 0 | 0.5 | 100 | 100 | 0.0005 | 0.021 |
 | 25 | 0 | 0.5 | 100 | 100 | 0.0005 | 0.012 |
 | 50 | 0.000001 | 0 | 100 | 50 | 0.0005 | 0.011 |
