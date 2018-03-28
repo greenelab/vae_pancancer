@@ -8,7 +8,11 @@ and z matrices. The script will need to pull appropriate hyperparameters from
 respective files after several initial sweeps testing various hyperparameter
 combinations with different z dimensionality.
 
-The script will fit several different compression algorithms and output results
+The script will fit several different compression algorithms and output results.
+The results include the weight matrices and z matrices of the models with the
+lowest reconstruction loss. The total stability of reconstruction losses are
+represented through the variability associated with each model after retraining
+several times given the argument for number of seeds.
 
 Usage:
 
@@ -24,6 +28,7 @@ Usage:
     And optional command line arguments
 
         --num_seeds         The number of specific models to generate
+                                default: 5
 """
 
 import argparse
@@ -110,13 +115,13 @@ for seed in random_seeds:
                   sparsity=dae_sparsity, verbose=False)
 
     # Obtain z matrix (sample scores per latent space feature) for all models
-    z_matrix = data_models.compile_z_matrix(algorithms)
+    z_matrix = data_models.combine_models()
 
     # Obtain weight matrices (gene by latent space feature) for all models
-    weight_matrix = data_models.compile_weight_matrix(algorithms)
+    weight_matrix = data_models.combine_weight_matrix()
 
     # Store reconstruction costs at training end
-    reconstruction = data_models.compile_reconstruction(algorithms)
+    reconstruction = data_models.compile_reconstruction()
 
     # Concatenate Results
     z_matrices.append(z_matrix)
