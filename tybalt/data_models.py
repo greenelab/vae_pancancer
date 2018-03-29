@@ -318,7 +318,7 @@ class DataModel():
         if hasattr(self, 'adage_df'):
             all_weight += [self.adage_weights]
 
-        all_weight_df = pd.concat(all_weight, axis=0)
+        all_weight_df = pd.concat(all_weight, axis=0).T
         return all_weight_df
 
     def compile_reconstruction(self):
@@ -345,13 +345,17 @@ class DataModel():
             vae_reconstruct = self.tybalt_fit.decoder.predict_on_batch(
                 self.tybalt_fit.encoder.predict_on_batch(self.df)
                 )
-            vae_recon = approx_keras_binary_cross_entropy(vae_reconstruct)
+            vae_recon = approx_keras_binary_cross_entropy(vae_reconstruct,
+                                                          self.df,
+                                                          self.num_genes)
             all_reconstruction['vae'] = [vae_recon]
         if hasattr(self, 'adage_df'):
             dae_reconstruct = self.adage_fit.decoder.predict_on_batch(
                 self.adage_fit.encoder.predict_on_batch(self.df)
                 )
-            dae_recon = approx_keras_binary_cross_entropy(dae_reconstruct)
+            dae_recon = approx_keras_binary_cross_entropy(dae_reconstruct,
+                                                          self.df,
+                                                          self.num_genes)
             all_reconstruction['dae'] = [dae_recon]
 
         return pd.DataFrame(all_reconstruction)
