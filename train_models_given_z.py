@@ -45,7 +45,7 @@ from tybalt.data_models import DataModel
 def get_lowest_loss(matrix_list, reconstruction_df,
                     algorithms=['pca', 'ica', 'nmf', 'dae', 'vae']):
     """
-    Determine the specific model with the lowest loss using reconstruciton cost
+    Determine the specific model with the lowest loss using reconstruction cost
 
     Arguments:
     matrix_list - list of matrices (either weight or z matrices)
@@ -57,7 +57,7 @@ def get_lowest_loss(matrix_list, reconstruction_df,
     """
     final_matrix_list = []
     for alg in algorithms:
-        # Get the lost reconstruction cost for given algorithm
+        # Get lowest reconstruction error across iterations for an algorithm
         min_recon_subset = reconstruction_df.loc[:, alg].idxmin()
 
         # subset the matrix to the minimum loss
