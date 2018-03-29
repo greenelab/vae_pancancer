@@ -51,7 +51,6 @@ Usage: Run in command line: python scripts/latent_space_sweep_submit.py
                               default: '~/.conda/envs/tybalt-gpu/bin/python'
        --num_seeds          how many models to build (random seeds to set)
                               default: 5
-
        --local              if provided, sweep will be run locally instead
 
 Output:
