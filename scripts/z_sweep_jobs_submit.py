@@ -37,6 +37,9 @@ Usage: Run in command line: python scripts/latent_space_sweep_submit.py
 
      with required command arguments:
 
+       --components         space separated dimensionalities to submit jobs for
+                            e.g. "--num_components 2 5 10" will submit 3 jobs
+                            fitting 2, 5, and 10 latent space dimensions
        --param_config       location of tsv file (param by z dimension) for the
                             specific parameter combination for each z dimension
        --out_dir            filepath of where to save the results
@@ -48,7 +51,7 @@ Usage: Run in command line: python scripts/latent_space_sweep_submit.py
                               default: '~/.conda/envs/tybalt-gpu/bin/python'
        --num_seeds          how many models to build (random seeds to set)
                               default: 5
-       --components         a comma separated string of z dimensions
+
        --local              if provided, sweep will be run locally instead
 
 Output:
@@ -61,6 +64,8 @@ import pandas as pd
 from bsub_helper import bsub_help
 
 parser = argparse.ArgumentParser()
+parser.add_argument('-n', '--components', help='dimensionality to sweep over',
+                    nargs='+')
 parser.add_argument('-y', '--param_config',
                     help='locaiton of the parameter configuration')
 parser.add_argument('-d', '--out_dir', help='folder to store results')
@@ -70,9 +75,6 @@ parser.add_argument('-p', '--python_path', help='absolute path of python',
                     default='python')
 parser.add_argument('-s', '--num_seeds', default=5,
                     help='number of different seeds to run on current data')
-parser.add_argument('-n', '--components', help='dimensionality to sweep over',
-                    default='2,3,4,5,6,7,8,9,10,12,14,16,18,20,25,30,35,40,' +
-                            '45,50,60,70,80,90,100')
 parser.add_argument('-l', '--local', action='store_true',
                     help='decision to run models locally instead of on PMACS')
 args = parser.parse_args()
@@ -82,7 +84,7 @@ param_config_file = args.param_config
 out_dir = args.out_dir
 python_path = args.python_path
 num_seeds = args.num_seeds
-components = args.components.split(',')
+components = args.components
 local = args.local
 
 # Required to update shell for `subprocess` module if running locally
