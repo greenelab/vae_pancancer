@@ -15,10 +15,21 @@
 # Several figures describing the results of a parameter sweep over latent space
 # dimensionality for both Tybalt and ADAGE models
 
-library(dplyr)
 library(ggplot2)
+library(colorblindr)
 
 set.seed(123)
+
+`%>%` <- dplyr::`%>%`
+
+# Store base theme for plotting
+base_theme <-  theme(axis.text = element_text(size = rel(0.5)),
+                     axis.title = element_text(size = rel(0.7)),
+                     axis.text.x = element_text(angle = 45),
+                     strip.text = element_text(size = rel(0.5)),
+                     legend.text = element_text(size = rel(0.6)),
+                     legend.title = element_text(size = rel(0.8)),
+                     legend.key.height = unit(0.5, "line"))
 
 # Set input and output file names
 tyb_file <- file.path("results", "z_parameter_sweep_tybalt_full_results.tsv")
@@ -71,14 +82,6 @@ tybalt_select_df$learning_rate <-
                        `0.002` = "Learning: 0.002",
                        `0.0025` = "Learning: 0.0025")
 
-base_theme <-  theme(axis.text = element_text(size = rel(0.5)),
-                     axis.title = element_text(size = rel(0.7)),
-                     axis.text.x = element_text(angle = 45),
-                     strip.text = element_text(size = rel(0.5)),
-                     legend.text = element_text(size = rel(0.6)),
-                     legend.title = element_text(size = rel(0.8)),
-                     legend.key.height = unit(0.5, "line"))
-
 # 1) Describe final validation loss for all hyperparameter combinations
 # across number of latent space dimensionality (x axis)
 tybalt_param_z_png <- file.path(tyb_fig, "z_parameter_tybalt.png")
@@ -89,6 +92,7 @@ p <- ggplot(tybalt_select_df, aes(x = as.numeric(paste(num_components)),
   geom_point(aes(shape = epochs, color = kappa), size = 0.8, alpha = 0.7,
              position = position_jitter(w = 5, h = 0)) +
   scale_x_continuous(breaks = c(5, 25, 50, 75, 100, 125)) +
+  scale_color_OkabeIto() +
   facet_grid(batch_size ~ learning_rate) +
   ylab("Final Validation Loss") +
   xlab("Latent Space Dimensionality") +
@@ -117,7 +121,8 @@ tybalt_one_model_pdf <- file.path(tyb_fig, "z_parameter_tybalt_training.pdf")
 p <- ggplot(tybalt_one_model, aes(x = as.numeric(paste(train_epoch)),
                              y = val_loss)) +
   geom_line(aes(color = kappa), size = 0.2, alpha = 0.7) +
-  facet_wrap(~num_components) +
+  scale_color_OkabeIto() +
+  facet_wrap(~ num_components) +
   ylab("Final Validation Loss") +
   xlab("Training Epochs") +
   theme_bw() +
@@ -141,7 +146,7 @@ readr::write_tsv(tybalt_best_params, best_param_file)
 # latent space dimensionality.
 
 # We observed that increasing the number of components resulted in changes to
-# optimal hyperparameters. As the dimensionaly increased, the learning rate
+# optimal hyperparameters. As the dimensionality increased, the learning rate
 # decreased, batch size and epochs increased, and kappa decreased.
 tybalt_good_training_df <- tybalt_melt_df %>%
   dplyr::filter(
@@ -171,9 +176,7 @@ p <- ggplot(tybalt_good_training_df, aes(x = train_epoch, y = loss)) +
   geom_line(aes(color = num_components, linetype = loss_type), size = 0.2) +
   xlab("Training Epoch") +
   ylab("Loss") +
-  scale_color_manual(name = "Latent Dimensions",
-                     values = c("#e41a1c", "#377eb8", "#4daf4a", "#984ea3",
-                                "#ff7f00", "#ffff33")) +
+  scale_color_OkabeIto(name = "Latent Dimensions") +
   scale_linetype_manual(name = "Loss Type", values = c("solid", "dotted"),
                         labels = c("Train", "Validation")) +
   theme_bw() +
@@ -221,6 +224,10 @@ adage_select_df$learning_rate <-
                        `0.002` = "Learning: 0.002",
                        `0.0025` = "Learning: 0.0025")
 
+spars <- adage_select_df$sparsity
+spars <- factor(spars, levels = c("0.0", "1e-06", "0.001"))
+adage_select_df$sparsity <- spars
+
 # 1) Describe final validation loss for all hyperparameter combinations
 # across number of latent space dimensionality (x axis) for ADAGE
 adage_param_z_png <- file.path(adage_fig, "z_parameter_adage.png")
@@ -232,7 +239,7 @@ p <- ggplot(adage_select_df,
              alpha = 0.7, position = position_jitter(w = 5, h = 0)) + 
   facet_grid(noise ~ learning_rate) +
   scale_size_manual(values = c(0.8, 0.4), name = "Batch Size") +
-  scale_color_discrete(name = "Sparsity") +
+  scale_color_OkabeIto(name = "Sparsity") +
   scale_shape_discrete(name = "Epochs") +
   scale_x_continuous(breaks = c(5, 25, 50, 75, 100, 125)) +
   xlab("Latent Space Dimensionality") +
@@ -255,7 +262,7 @@ p <- ggplot(adage_select_subset_df,
              alpha = 0.7) + 
   facet_grid(noise ~ learning_rate) +
   scale_size_manual(values = c(0.8, 0.4), name = "Batch Size") +
-  scale_color_discrete(name = "Sparsity") +
+  scale_color_OkabeIto(name = "Sparsity") +
   scale_shape_discrete(name = "Epochs") +
   scale_x_continuous(breaks = c(5, 25, 50, 75, 100, 125)) +
   xlab("Latent Space Dimensionality") +
@@ -309,9 +316,7 @@ adage_best_model_pdf <- file.path(adage_fig, "z_parameter_adage_best.pdf")
 p <- ggplot(adage_good_training_df, aes(x = train_epoch, y = loss)) +
   geom_line(aes(color = num_components, linetype = loss_type), size = 0.2) +
   xlab("Training Epoch") + ylab("Loss") +
-  scale_color_manual(name = "Latent Dimensions",
-                     values = c("#e41a1c", "#377eb8", "#4daf4a", "#984ea3",
-                                "#ff7f00", "#ffff33")) +
+  scale_color_OkabeIto(name = "Latent Dimensions") +
   scale_linetype_manual(name = "Loss Type", values = c("solid", "dotted"),
                         labels = c("Train", "Validation")) +
   theme_bw() +
