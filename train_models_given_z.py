@@ -241,7 +241,7 @@ best_corr_det_df.columns = [num_components]
 
 # Save training histories
 tybalt_history_df = pd.concat(tybalt_training_histories)
-adage_history_df = pd.concat(tybalt_training_histories)
+adage_history_df = pd.concat(adage_training_histories)
 
 # Output files
 final_weight_matrix.to_csv(w_file, sep='\t')
