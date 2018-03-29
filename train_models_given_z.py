@@ -90,7 +90,7 @@ def get_corr_determinants(matrix_list,
     Output:
     pandas DataFrame of all correlation matrix determinants by algorithm
     """
-    matrix_df = pd.concat(matrix_list, axis=0).T
+    matrix_df = pd.concat(matrix_list, axis=1)
     all_corr_det = {}
 
     for alg in algorithms:
@@ -229,12 +229,15 @@ final_z_matrix = get_lowest_loss(z_matrices, reconstruction_df)
 
 # Compile determinants of different correlation matrices
 weight_corr_det = get_corr_determinants(weight_matrices)
+weight_corr_det.index = [num_components]
 z_corr_det = get_corr_determinants(z_matrices)
+z_corr_det.index = [num_components]
 
 best_weight_corr_det = full_correlation_determinant(final_weight_matrix)
 best_z_corr_det = full_correlation_determinant(final_z_matrix)
 best_corr_det_df = pd.DataFrame([best_weight_corr_det, best_z_corr_det],
                                 index=['weight', 'z'])
+best_corr_det_df.columns = [num_components]
 
 # Save training histories
 tybalt_history_df = pd.concat(tybalt_training_histories)
