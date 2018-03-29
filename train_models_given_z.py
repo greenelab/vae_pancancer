@@ -123,10 +123,10 @@ parser.add_argument('-s', '--num_seeds', default=5,
 args = parser.parse_args()
 
 # Load command arguments
-num_components = args.num_components
+num_components = int(args.num_components)
 param_config = args.param_config
 out_dir = args.out_dir
-num_seeds = args.seeds
+num_seeds = int(args.num_seeds)
 
 # Extract parameters from parameter configuation file
 param_df = pd.read_table(param_config, index_col=0)
