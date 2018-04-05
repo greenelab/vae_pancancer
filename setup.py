@@ -8,5 +8,7 @@ setup(name='tybalt',
       url='https://github.com/greenelab/tybalt',
       packages=['tybalt'],
       license='BSD 3-Clause License',
-      install_requires=['keras', 'tensorflow', 'pandas', 'scikit-learn'])
+      install_requires=['keras', 'tensorflow', 'pandas', 'scikit-learn'],
+      python_requires='>=3.4')
+
 
