@@ -37,8 +37,7 @@ class BaseModel():
             fig.show()
 
     def get_weights(self, decoder=True):
-        # build a generator that can sample from the learned distribution
-        # can generate from any sampled z vector
+        # Extract weight matrices from encoder or decoder
         weights = []
         if decoder:
             for layer in self.decoder.layers:
