@@ -347,7 +347,7 @@ class Adage(BaseModel):
         self.decoder = Model(encoded_input, decoder_layer(encoded_input))
 
         if self.tied_weights:
-            # The keras graph is build differently for a tied weight model
+            # The keras graph is built differently for a tied weight model
             # Build a model with input and output Tensors of the encoded layer
             self.encoder = Model(self.encoded.input, self.encoded.output)
         else:
