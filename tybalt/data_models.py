@@ -203,12 +203,12 @@ class DataModel():
             self.tybalt_fit.train_vae(train_df=self.nn_train_df,
                                       test_df=self.nn_test_df,
                                       separate_loss=tybalt_separate_loss)
-            self.tybalt_decoder_w = (
-                self.tybalt_fit.get_weights(decoder=use_decoder_weights)
-                )
 
             features = ['vae_{}'.format(x) for x in range(0, latent_dim)]
-            self.tybalt_weights = pd.DataFrame(self.tybalt_decoder_w[1][0],
+            self.tybalt_weights = (
+                self.tybalt_fit.get_weights(decoder=use_decoder_weights)
+                )
+            self.tybalt_weights = pd.DataFrame(self.tybalt_weights[1][0],
                                                columns=self.df.columns,
                                                index=features)
 
@@ -276,19 +276,14 @@ class DataModel():
             self.adage_fit.train_adage(train_df=self.nn_train_df,
                                        test_df=self.nn_test_df,
                                        adage_comparable_loss=adage_comp_loss)
-            self.adage_decoder_w = (
-                self.adage_fit.get_weights(decoder=use_decoder_weights)
-                )
 
             features = ['dae_{}'.format(x) for x in range(0, latent_dim)]
-            if use_decoder_weights:
-                self.adage_weights = pd.DataFrame(self.adage_decoder_w[1][0],
-                                                  columns=self.df.columns,
-                                                  index=features)
-            else:
-                self.adage_weights = pd.DataFrame(self.adage_decoder_w[1][0],
-                                                  index=self.df.columns,
-                                                  columns=features).T
+            self.adage_weights = (
+                self.adage_fit.get_weights(decoder=use_decoder_weights)
+                )
+            self.adage_weights = pd.DataFrame(self.adage_weights[1][0],
+                                              columns=self.df.columns,
+                                              index=features)
 
             self.adage_df = self.adage_fit.compress(self.df)
             self.adage_df.columns = features
