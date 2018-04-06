@@ -44,7 +44,10 @@ class BaseModel():
                 weights.append(layer.get_weights())
         else:
             for layer in self.encoder.layers:
-                weights.append(layer.get_weights())
+                # Encoder weights must be transposed
+                encoder_weights = layer.get_weights()
+                encoder_weights = [np.transpose(x) for x in encoder_weights]
+                weights.append(encoder_weights)
         return weights
 
     def save_models(self, encoder_file, decoder_file):
