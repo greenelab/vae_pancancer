@@ -142,7 +142,8 @@ We next asked if the LSA experiment resulted in reconstructions of `B_hat` that 
 ![](figures/simulation/lsa_reconstruction_distance.png?raw=true)
 
 All algorithms performed worse with increasing noise injection.
-Strangely, ADAGE reconstructions for `noise = 0.1` did not work well.
+Strangely, ADAGE reconstructions for `noise = 0.1` were unstable for all datasets except n = 8000.
+ADAGE was comparable with other datasets and all other algorithms were able to reconstruct `noise = 0.1`. 
 
 ### 3) Does the latent space arithmetic capture the feature most representative of module 3?
 
@@ -169,4 +170,4 @@ PCA and ICA perform well in all tasks (particularly PCA).
 This is likely because the simulation procedure assumes linear relationships among samples, and relatively low cross correlational structure across genes.
 Therefore, this simulation may not adequately represent the complexity of real data.
 NMF also performs well, particularly in solutions with high noise injection.
-Other algorithms can perform LSA, but Tybalt and ADAGE shines when asked to find the "essence" of the difference between sample groups.
+Other algorithms can perform LSA, but Tybalt and ADAGE shine when asked to find the "essence" of the difference between sample groups.
