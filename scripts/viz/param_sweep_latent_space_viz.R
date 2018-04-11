@@ -240,7 +240,6 @@ load_and_process_adage <- function(adage_filename) {
   lr <- paste("Learn:", lr)
   lr_levels <- paste("Learn:",
                      unique(sort(as.numeric(gsub("Learn: ", '', lr)))))
-  print(lr_levels)
   lr <- factor(lr, levels = lr_levels)
   da_list[["adage_select_df"]]$learning_rate <- lr
 
