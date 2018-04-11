@@ -225,7 +225,7 @@ load_and_process_adage <- function(adage_filename) {
                     num_components) %>%
     dplyr::summarize(end_loss = tail(loss, 1))
   
-  # Process select_df
+  # Process variables in select_df for plotting
   da_list[["adage_select_df"]]$noise <-
     dplyr::recode_factor(da_list[["adage_select_df"]]$noise, 
                          "0.0" = "Noise: 0",
@@ -235,36 +235,30 @@ load_and_process_adage <- function(adage_filename) {
   spars <- da_list[["adage_select_df"]]$sparsity
   spars <- factor(spars, levels = c("0.0", "1e-06", "0.001"))
   da_list[["adage_select_df"]]$sparsity <- spars
+  
+  lr <- as.numeric(paste(da_list[["adage_select_df"]]$learning_rate))
+  lr <- paste("Learn:", lr)
+  lr_levels <- paste("Learn:",
+                     unique(sort(as.numeric(gsub("Learn: ", '', lr)))))
+  print(lr_levels)
+  lr <- factor(lr, levels = lr_levels)
+  da_list[["adage_select_df"]]$learning_rate <- lr
 
   return(da_list)
 }
 
-adage_untied_list <- load_and_process_adage(adage_file)
-adage_tied_list <- load_and_process_adage(da_tw_file)
+# Two functions facilitate plotting across ADAGE models
+plot_final_val <- function(select_df, filter_sparsity=FALSE) {
+  # Plot final validation loss at training end for ADAGE models with various
+  # input hyperparameters
 
-# Recode learning rate - we added learning rates for the tied weight model
-adage_untied_list[["adage_select_df"]]$learning_rate <-
-  dplyr::recode_factor(adage_untied_list[["adage_select_df"]]$learning_rate, 
-                       `0.0005` = "Learning: 0.0005",
-                       `0.001` = "Learning: 0.001", 
-                       `0.0015` = "Learning: 0.0015",
-                       `0.002` = "Learning: 0.002",
-                       `0.0025` = "Learning: 0.0025")
+  if (filter_sparsity) {
+    select_df <- select_df %>% dplyr::filter(sparsity != 0.001)
+  }
 
-adage_tied_list[["adage_select_df"]]$learning_rate <-
-  dplyr::recode_factor(adage_tied_list[["adage_select_df"]]$learning_rate,
-                       `1e-05` = "Learn: 1e-05",
-                       `5e-05` = "Learn: 5e-05",
-                       `0.0005` = "Learn: 0.0005",
-                       `0.001` = "Learn: 0.001", 
-                       `0.0015` = "Learn: 0.0015",
-                       `0.002` = "Learn: 0.002",
-                       `0.0025` = "Learn: 0.0025")
-
-# 1) Describe final validation loss for all hyperparameter combinations
-# across number of latent space dimensionality (x axis) for ADAGE
-
-plot_final_val <- function(select_df) {
+  # Latent space dimensionality by final validation loss points with learning
+  # rate and noise facets. The size, color, and shape of the points represent
+  # different ADAGE hyperparameters
   p <- ggplot(select_df,
               aes(x = as.numeric(paste(num_components)), y = end_loss)) +
     geom_point(aes(shape = epochs, size = batch_size, color = sparsity),
@@ -279,6 +273,34 @@ plot_final_val <- function(select_df) {
     theme_bw() + base_theme
   return(p)
 }
+
+plot_adage_best_training <- function(good_training_df) {
+  # Plot the full training performance across all training epochs for select
+  # ADAGE models given different latent space dimensionality
+
+  num_com <- good_training_df$num_components
+  num_com <- factor(num_com, levels = sort(as.numeric(paste(unique(num_com)))))
+  good_training_df$num_components <- num_com
+  
+  # Create line graph where colors represent different latent space
+  # dimensionality and linetype represents training or testing sets
+  p <- ggplot(good_training_df, aes(x = train_epoch, y = loss)) +
+    geom_line(aes(color = num_components, linetype = loss_type), size = 0.2) +
+    xlab("Training Epoch") + ylab("Loss") +
+    scale_color_OkabeIto(name = "Latent Dimensions") +
+    scale_linetype_manual(name = "Loss Type", values = c("solid", "dotted"),
+                          labels = c("Train", "Validation")) +
+    theme_bw() +
+    base_theme
+  return(p)
+}
+
+# 0) Load and process data for tied and untied weights
+adage_untied_list <- load_and_process_adage(adage_file)
+adage_tied_list <- load_and_process_adage(da_tw_file)
+
+# 1) Describe final validation loss for all hyperparameter combinations
+# across number of latent space dimensionality (x axis) for ADAGE
 
 # First, plot the untied weights model
 adage_param_z_png <- file.path(adage_fig, "z_parameter_adage.png")
@@ -300,33 +322,12 @@ ggsave(adage_param_z_pdf, plot = p, height = 2.5, width = 5.5)
 
 # 2) Sparsity 0.001 did not converge, remove it and replot
 
-plot_sparsity_subset <- function(select_df) {
-
-  select_subset_df <- select_df %>%
-    dplyr::filter(sparsity != 0.001)
-
-  p <- ggplot(select_subset_df,
-              aes(x = as.numeric(paste(num_components)), y = end_loss)) +
-    geom_point(aes(shape = epochs, size = batch_size, color = sparsity), 
-             position = position_jitter(w = 5, h = 0),
-             alpha = 0.7) + 
-    facet_grid(noise ~ learning_rate) +
-    scale_size_manual(values = c(0.8, 0.4), name = "Batch Size") +
-    scale_color_OkabeIto(name = "Sparsity") +
-    scale_shape_discrete(name = "Epochs") +
-    scale_x_continuous(breaks = c(5, 25, 50, 75, 100, 125)) +
-    xlab("Latent Space Dimensionality") +
-    ylab("Final Validation Loss") +
-    theme_bw() +
-    base_theme
-  return(p)
-}
-
 # First, plot the untied weights model
 adage_sub_png <- file.path(adage_fig, "z_parameter_adage_remove_sparsity.png")
 adage_sub_pdf <- file.path(adage_fig, "z_parameter_adage_remove_sparsity.pdf")
 
-p <- plot_sparsity_subset(adage_untied_list[["adage_select_df"]])
+p <- plot_final_val(adage_untied_list[["adage_select_df"]],
+                    filter_sparsity = TRUE)
 
 ggsave(adage_sub_png, plot = p, height = 2.5, width = 5.5)
 ggsave(adage_sub_pdf, plot = p, height = 2.5, width = 5.5)
@@ -337,7 +338,8 @@ adage_sub_png <- file.path(da_tw_fig,
 adage_sub_pdf <- file.path(da_tw_fig,
                            "z_parameter_adage_remove_sparsity_tiedweights.pdf")
 
-p <- plot_sparsity_subset(adage_tied_list[["adage_select_df"]])
+p <- plot_final_val(adage_tied_list[["adage_select_df"]],
+                    filter_sparsity = TRUE)
 
 ggsave(adage_sub_png, plot = p, height = 2.5, width = 5.5)
 ggsave(adage_sub_pdf, plot = p, height = 2.5, width = 5.5)
@@ -389,25 +391,6 @@ adage_tied_good_training_df <- adage_tied_list[["adage_melt_df"]] %>%
   dplyr::filter(epochs == 100) %>%
   dplyr::filter(batch_size == 50) %>%
   dplyr::filter(noise == "0.0")
-
-# Reorder dimensionality for plotting
-
-plot_adage_best_training <- function(good_training_df) {
-  
-  num_com <- good_training_df$num_components
-  num_com <- factor(num_com, levels = sort(as.numeric(paste(unique(num_com)))))
-  good_training_df$num_components <- num_com
-  
-  p <- ggplot(good_training_df, aes(x = train_epoch, y = loss)) +
-    geom_line(aes(color = num_components, linetype = loss_type), size = 0.2) +
-    xlab("Training Epoch") + ylab("Loss") +
-    scale_color_OkabeIto(name = "Latent Dimensions") +
-    scale_linetype_manual(name = "Loss Type", values = c("solid", "dotted"),
-                          labels = c("Train", "Validation")) +
-    theme_bw() +
-    base_theme
-  return(p)
-}
 
 # First, plot the untied weights model'
 best_model_png <- file.path(adage_fig, "z_parameter_adage_best.png")
