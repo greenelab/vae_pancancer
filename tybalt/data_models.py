@@ -66,7 +66,7 @@ class DataModel():
         gene_modules - a list of gene module assignments for each gene (for use
         with the simulated data or when ground truth gene modules are known)
         test_filename - if provided, loads testing dataset into object
-        test_df - dataframe of prelaoded gene expression testing set data
+        test_df - dataframe of preloaded gene expression testing set data
         """
         # Load gene expression data
         self.filename = filename
@@ -255,7 +255,7 @@ class DataModel():
                 out_df = self.tybalt_fit.compress(transform_df)
                 return out_df
             if transform_test_df:
-                self.tybalt_test_df = self.tybalt_fit.compress(df.test_df)
+                self.tybalt_test_df = self.tybalt_fit.compress(self.test_df)
 
         if model == 'ctybalt':
             self.ctybalt_fit = cTybalt(original_dim=original_dim,
@@ -374,118 +374,92 @@ class DataModel():
         all_weight_df = pd.concat(all_weight, axis=0).T
         return all_weight_df
 
-    def compile_reconstruction(self):
-        all_reconstruction = {}
-        reconstruct_matrices = {}
-        if hasattr(self, 'pca_df'):
-            pca_reconstruct = self.pca_fit.inverse_transform(self.pca_df)
-            pca_recon = approx_keras_binary_cross_entropy(pca_reconstruct,
-                                                          self.df,
-                                                          self.num_genes)
-            all_reconstruction['pca'] = [pca_recon]
-            reconstruct_matrices['pca'] = pd.DataFrame(pca_reconstruct,
-                                                       index=self.df.index,
-                                                       columns=self.df.columns)
-        if hasattr(self, 'ica_df'):
-            ica_reconstruct = self.ica_fit.inverse_transform(self.ica_df)
-            ica_recon = approx_keras_binary_cross_entropy(ica_reconstruct,
-                                                          self.df,
-                                                          self.num_genes)
-            all_reconstruction['ica'] = [ica_recon]
-            reconstruct_matrices['ica'] = pd.DataFrame(ica_reconstruct,
-                                                       index=self.df.index,
-                                                       columns=self.df.columns)
-        if hasattr(self, 'nmf_df'):
-            nmf_reconstruct = self.nmf_fit.inverse_transform(self.nmf_df)
-            nmf_recon = approx_keras_binary_cross_entropy(nmf_reconstruct,
-                                                          self.df,
-                                                          self.num_genes)
-            all_reconstruction['nmf'] = [nmf_recon]
-            reconstruct_matrices['nmf'] = pd.DataFrame(nmf_reconstruct,
-                                                       index=self.df.index,
-                                                       columns=self.df.columns)
-        if hasattr(self, 'tybalt_df'):
-            vae_reconstruct = self.tybalt_fit.decoder.predict_on_batch(
-                self.tybalt_fit.encoder.predict_on_batch(self.df)
-                )
-            vae_recon = approx_keras_binary_cross_entropy(vae_reconstruct,
-                                                          self.df,
-                                                          self.num_genes)
-            all_reconstruction['vae'] = [vae_recon]
-            reconstruct_matrices['vae'] = pd.DataFrame(vae_reconstruct,
-                                                       index=self.df.index,
-                                                       columns=self.df.columns)
-        if hasattr(self, 'adage_df'):
-            dae_reconstruct = self.adage_fit.decoder.predict_on_batch(
-                self.adage_fit.encoder.predict_on_batch(self.df)
-                )
-            dae_recon = approx_keras_binary_cross_entropy(dae_reconstruct,
-                                                          self.df,
-                                                          self.num_genes)
-            all_reconstruction['dae'] = [dae_recon]
-            reconstruct_matrices['dae'] = pd.DataFrame(dae_reconstruct,
-                                                       index=self.df.index,
-                                                       columns=self.df.columns)
+    def compile_reconstruction(self, test_set=False):
+        """
+        Compile reconstruction costs between input and algorithm reconstruction
 
-        return pd.DataFrame(all_reconstruction), reconstruct_matrices
+        Arguments:
+        test_set - if True, compile reconstruction for the test set data
 
-    def compile_reconstruction_testset(self):
+        Output:
+        Two dictionaries storing 1) reconstruction costs and 2) reconstructed
+        matrix for each algorithm
+        """
+
+        # Set the dataframe for use to compute reconstruction cost
+        if test_set:
+            input_df = self.test_df
+        else:
+            input_df = self.df
+
         all_reconstruction = {}
         reconstruct_mat = {}
-        if hasattr(self, 'pca_test_df'):
-            key = 'pca_test'
-            pca_reconstruct = self.pca_fit.inverse_transform(self.pca_test_df)
+        if hasattr(self, 'pca_df'):
+            # Set PCA dataframe
+            if test_set:
+                pca_df = self.pca_test_df
+            else:
+                pca_df = self.pca_df
+
+            pca_reconstruct = self.pca_fit.inverse_transform(pca_df)
             pca_recon = approx_keras_binary_cross_entropy(pca_reconstruct,
-                                                          self.test_df,
+                                                          input_df,
                                                           self.num_genes)
-            all_reconstruction[key] = [pca_recon]
-            reconstruct_mat[key] = pd.DataFrame(pca_reconstruct,
-                                                index=self.test_df.index,
-                                                columns=self.test_df.columns)
-        if hasattr(self, 'ica_test_df'):
-            key = 'ica_test'
-            ica_reconstruct = self.ica_fit.inverse_transform(self.ica_test_df)
+            all_reconstruction['pca'] = [pca_recon]
+            reconstruct_mat['pca'] = pd.DataFrame(pca_reconstruct,
+                                                  index=input_df.index,
+                                                  columns=input_df.columns)
+        if hasattr(self, 'ica_df'):
+            # Set ICA dataframe
+            if test_set:
+                ica_df = self.ica_test_df
+            else:
+                ica_df = self.ica_df
+
+            ica_reconstruct = self.ica_fit.inverse_transform(ica_df)
             ica_recon = approx_keras_binary_cross_entropy(ica_reconstruct,
-                                                          self.test_df,
+                                                          input_df,
                                                           self.num_genes)
-            all_reconstruction[key] = [ica_recon]
-            reconstruct_mat[key] = pd.DataFrame(ica_reconstruct,
-                                                index=self.test_df.index,
-                                                columns=self.test_df.columns)
-        if hasattr(self, 'nmf_test_df'):
-            key = 'nmf_test'
-            nmf_reconstruct = self.nmf_fit.inverse_transform(self.nmf_test_df)
+            all_reconstruction['ica'] = [ica_recon]
+            reconstruct_mat['ica'] = pd.DataFrame(ica_reconstruct,
+                                                  index=input_df.index,
+                                                  columns=input_df.columns)
+        if hasattr(self, 'nmf_df'):
+            # Set NMF dataframe
+            if test_set:
+                nmf_df = self.nmf_test_df
+            else:
+                nmf_df = self.nmf_df
+            nmf_reconstruct = self.nmf_fit.inverse_transform(nmf_df)
             nmf_recon = approx_keras_binary_cross_entropy(nmf_reconstruct,
-                                                          self.test_df,
+                                                          input_df,
                                                           self.num_genes)
-            all_reconstruction[key] = [nmf_recon]
-            reconstruct_mat[key] = pd.DataFrame(nmf_reconstruct,
-                                                index=self.test_df.index,
-                                                columns=self.test_df.columns)
-        if hasattr(self, 'tybalt_test_df'):
-            key = 'vae'
+            all_reconstruction['nmf'] = [nmf_recon]
+            reconstruct_mat['nmf'] = pd.DataFrame(nmf_reconstruct,
+                                                  index=input_df.index,
+                                                  columns=input_df.columns)
+        if hasattr(self, 'tybalt_df'):
             vae_reconstruct = self.tybalt_fit.decoder.predict_on_batch(
-                self.tybalt_fit.encoder.predict_on_batch(self.test_df)
+                self.tybalt_fit.encoder.predict_on_batch(input_df)
                 )
             vae_recon = approx_keras_binary_cross_entropy(vae_reconstruct,
-                                                          self.test_df,
+                                                          input_df,
                                                           self.num_genes)
-            all_reconstruction[key] = [vae_recon]
-            reconstruct_mat[key] = pd.DataFrame(vae_reconstruct,
-                                                index=self.test_df.index,
-                                                columns=self.test_df.columns)
-        if hasattr(self, 'adage_test_df'):
-            key = 'dae'
+            all_reconstruction['vae'] = [vae_recon]
+            reconstruct_mat['vae'] = pd.DataFrame(vae_reconstruct,
+                                                  index=input_df.index,
+                                                  columns=input_df.columns)
+        if hasattr(self, 'adage_df'):
             dae_reconstruct = self.adage_fit.decoder.predict_on_batch(
-                self.adage_fit.encoder.predict_on_batch(self.test_df)
+                self.adage_fit.encoder.predict_on_batch(input_df)
                 )
             dae_recon = approx_keras_binary_cross_entropy(dae_reconstruct,
-                                                          self.test_df,
+                                                          input_df,
                                                           self.num_genes)
-            all_reconstruction[key] = [dae_recon]
-            reconstruct_mat[key] = pd.DataFrame(dae_reconstruct,
-                                                index=self.test_df.index,
-                                                columns=self.test_df.columns)
+            all_reconstruction['dae'] = [dae_recon]
+            reconstruct_mat['dae'] = pd.DataFrame(dae_reconstruct,
+                                                  index=input_df.index,
+                                                  columns=input_df.columns)
 
         return pd.DataFrame(all_reconstruction), reconstruct_mat
 
