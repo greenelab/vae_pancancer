@@ -332,20 +332,54 @@ class DataModel():
             if transform_test_df:
                 self.adage_test_df = self.adage_fit.compress(self.test_df)
 
-    def combine_models(self, include_labels=False, include_raw=False):
+    def combine_models(self, include_labels=False, include_raw=False,
+                       test_set=False):
+        """
+        Merge z matrices together across algorithms
+
+        Arguments:
+        test_set - if True, output z matrix predictions for test set
+
+        Output:
+        pandas dataframe of all model z matrices
+        """
         all_models = []
         if hasattr(self, 'pca_df'):
-            all_models += [self.pca_df]
+            if test_set:
+                pca_df = self.pca_test_df
+            else:
+                pca_df = self.pca_df
+            all_models += [pca_df]
         if hasattr(self, 'ica_df'):
-            all_models += [self.ica_df]
+            if test_set:
+                ica_df = self.ica_test_df
+            else:
+                ica_df = self.ica_df
+            all_models += [ica_df]
         if hasattr(self, 'nmf_df'):
-            all_models += [self.nmf_df]
+            if test_set:
+                nmf_df = self.nmf_test_df
+            else:
+                nmf_df = self.nmf_df
+            all_models += [nmf_df]
         if hasattr(self, 'tybalt_df'):
-            all_models += [self.tybalt_df]
+            if test_set:
+                tybalt_df = self.tybalt_test_df
+            else:
+                tybalt_df = self.tybalt_df
+            all_models += [tybalt_df]
         if hasattr(self, 'ctybalt_df'):
-            all_models += [self.ctybalt_df]
+            if test_set:
+                ctybalt_df = self.ctybalt_test_df
+            else:
+                ctybalt_df = self.ctybalt_df
+            all_models += [ctybalt_df]
         if hasattr(self, 'adage_df'):
-            all_models += [self.adage_df]
+            if test_set:
+                adage_df = self.adage_test_df
+            else:
+                adage_df = self.adage_df
+            all_models += [adage_df]
 
         if include_raw:
             all_models += [self.df]
@@ -460,66 +494,6 @@ class DataModel():
             reconstruct_mat['dae'] = pd.DataFrame(dae_reconstruct,
                                                   index=input_df.index,
                                                   columns=input_df.columns)
-
-        return pd.DataFrame(all_reconstruction), reconstruct_mat
-
-    def compile_reconstruction_testset(self):
-        all_reconstruction = {}
-        reconstruct_mat = {}
-        if hasattr(self, 'pca_test_df'):
-            key = 'pca_test'
-            pca_reconstruct = self.pca_fit.inverse_transform(self.pca_test_df)
-            pca_recon = approx_keras_binary_cross_entropy(pca_reconstruct,
-                                                          self.test_df,
-                                                          self.num_genes)
-            all_reconstruction[key] = [pca_recon]
-            reconstruct_mat[key] = pd.DataFrame(pca_reconstruct,
-                                                index=self.test_df.index,
-                                                columns=self.test_df.columns)
-        if hasattr(self, 'ica_test_df'):
-            key = 'ica_test'
-            ica_reconstruct = self.ica_fit.inverse_transform(self.ica_test_df)
-            ica_recon = approx_keras_binary_cross_entropy(ica_reconstruct,
-                                                          self.test_df,
-                                                          self.num_genes)
-            all_reconstruction[key] = [ica_recon]
-            reconstruct_mat[key] = pd.DataFrame(ica_reconstruct,
-                                                index=self.test_df.index,
-                                                columns=self.test_df.columns)
-        if hasattr(self, 'nmf_test_df'):
-            key = 'nmf_test'
-            nmf_reconstruct = self.nmf_fit.inverse_transform(self.nmf_test_df)
-            nmf_recon = approx_keras_binary_cross_entropy(nmf_reconstruct,
-                                                          self.test_df,
-                                                          self.num_genes)
-            all_reconstruction[key] = [nmf_recon]
-            reconstruct_mat[key] = pd.DataFrame(nmf_reconstruct,
-                                                index=self.test_df.index,
-                                                columns=self.test_df.columns)
-        if hasattr(self, 'tybalt_test_df'):
-            key = 'vae'
-            vae_reconstruct = self.tybalt_fit.decoder.predict_on_batch(
-                self.tybalt_fit.encoder.predict_on_batch(self.test_df)
-                )
-            vae_recon = approx_keras_binary_cross_entropy(vae_reconstruct,
-                                                          self.test_df,
-                                                          self.num_genes)
-            all_reconstruction[key] = [vae_recon]
-            reconstruct_mat[key] = pd.DataFrame(vae_reconstruct,
-                                                index=self.test_df.index,
-                                                columns=self.test_df.columns)
-        if hasattr(self, 'adage_test_df'):
-            key = 'dae'
-            dae_reconstruct = self.adage_fit.decoder.predict_on_batch(
-                self.adage_fit.encoder.predict_on_batch(self.test_df)
-                )
-            dae_recon = approx_keras_binary_cross_entropy(dae_reconstruct,
-                                                          self.test_df,
-                                                          self.num_genes)
-            all_reconstruction[key] = [dae_recon]
-            reconstruct_mat[key] = pd.DataFrame(dae_reconstruct,
-                                                index=self.test_df.index,
-                                                columns=self.test_df.columns)
 
         return pd.DataFrame(all_reconstruction), reconstruct_mat
 
