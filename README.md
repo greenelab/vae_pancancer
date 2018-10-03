@@ -27,6 +27,9 @@ when the data processing code
 actually outputs the top _mean_ absolute deviation genes. We discuss this discrepancy
 and its potential impact in [issue #99](https://github.com/greenelab/tybalt/issues/99).
 
+> **NOTE** git-lfs (https://git-lfs.github.com/) must be installed prior to cloning the repository.
+If it is not installed, run `git lfs install`
+
 ## The Data
 
 TCGA has collected numerous different genomic measurements from over 10,000
